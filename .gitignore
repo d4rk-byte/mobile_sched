@@ -1,0 +1,168 @@
+# Faculty Dashboard Mobile App - Git Ignore
+
+# Follows the official Dart gitignore template
+# https://github.com/github/gitignore/blob/master/Dart.gitignore
+
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.expo/
+.history
+.ionic/
+.packages
+.pub-cache/
+.pub/
+.tern-port
+**/doc/api/
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.modulemap
+**/ios/Flutter/GeneratedPluginRegistrant.swift
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+
+# iOS/macOS
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.moved-aside
+**/ios/**/*.pbxuser
+**/ios/**/*.perspectivev3
+**/ios/**/*sync/
+**/ios/**/.sconsign.dblite
+**/ios/**/.tags*
+**/ios/**/.vagrant/
+**/ios/**/DerivedData/
+**/ios/**/Icon?
+**/ios/**/Icon??
+**/ios/**/Icon???
+**/ios/**/Icon????
+**/ios/**/Icon?????
+**/ios/**/Icon??
+**/ios/**/Icon???
+**/ios/**/Icon????
+**/ios/**/Icon?????
+**/ios/**/Pods/
+**/ios/**/.symlinks/
+**/ios/**/*.lock
+**/ios/**/flutter/Flutter.framework
+**/ios/**/flutter/Flutter.podspec
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/flutter_assets/
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+
+# Android/Gradle/Maven
+**/android/app/debug
+**/android/app/profile
+**/android/app/release
+**/android/.gradle
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/gradle-wrapper.jar
+**/android/gradle-wrapper.properties
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/build/
+
+# Web
+lib/generated_plugin_registrant.dart
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# iOS/macOS
+**/ios/**/.gitignore
+**/ios/.idea/
+**/ios/*.iml
+**/ios/*.perspectivev3
+**/ios/*.pbxuser
+**/ios/*.xcworkspace/
+
+# Android
+.gradle/
+.idea/
+gradlew
+gradlew.bat
+
+# Environmental files
+.env
+.env.local
+.env.*.local
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Mac OSX
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*~.nib
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+.fluttertools
+
+# Build outputs
+build/
+.dart_tool/
+pubspec.lock
+
+# Coverage
+coverage/
+
+# Generated files
+*.g.dart
+*.config.dart
+
+# Local environment configuration
+.env.local
+config/local.dart
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# Misc
+*.log
+.DS_Store
+Thumbs.db
+
+# Documentation files
+*.md
