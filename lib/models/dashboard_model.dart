@@ -91,6 +91,23 @@ class AcademicYear {
       };
 }
 
+enum ScheduleTimeStatus {
+  inProgress,
+  upcoming,
+  completed;
+
+  String get label {
+    switch (this) {
+      case ScheduleTimeStatus.inProgress:
+        return 'In Progress';
+      case ScheduleTimeStatus.upcoming:
+        return 'Upcoming';
+      case ScheduleTimeStatus.completed:
+        return 'Completed';
+    }
+  }
+}
+
 class ScheduleItem {
   final int id;
   final Subject subject;
@@ -108,6 +125,39 @@ class ScheduleItem {
   final String semester;
   final AcademicYear? academicYear;
   final String status;
+
+  /// Calculates the real-time status based on current time.
+  /// - In Progress: current time is between start and end
+  /// - Completed: current time is past end time
+  /// - Upcoming: current time is before start time
+  ScheduleTimeStatus get timeStatus {
+    final now = DateTime.now();
+    final currentMinutes = now.hour * 60 + now.minute;
+
+    final startMinutes = _parseTimeToMinutes(startTime);
+    final endMinutes = _parseTimeToMinutes(endTime);
+
+    if (startMinutes == null || endMinutes == null) {
+      return ScheduleTimeStatus.upcoming;
+    }
+
+    if (currentMinutes >= startMinutes && currentMinutes < endMinutes) {
+      return ScheduleTimeStatus.inProgress;
+    } else if (currentMinutes >= endMinutes) {
+      return ScheduleTimeStatus.completed;
+    }
+    return ScheduleTimeStatus.upcoming;
+  }
+
+  int? _parseTimeToMinutes(String time) {
+    if (time.isEmpty) return null;
+    final parts = time.split(':');
+    if (parts.length < 2) return null;
+    final hours = int.tryParse(parts[0]);
+    final minutes = int.tryParse(parts[1]);
+    if (hours == null || minutes == null) return null;
+    return hours * 60 + minutes;
+  }
 
   ScheduleItem({
     required this.id,

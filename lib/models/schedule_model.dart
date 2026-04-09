@@ -16,18 +16,24 @@ class ScheduleResponse {
   });
 
   factory ScheduleResponse.fromJson(Map<String, dynamic> json) {
+    final payload = json['data'] is Map
+        ? Map<String, dynamic>.from(json['data'] as Map)
+        : json;
+
+    final rawSchedules = (payload['schedules'] ?? payload['classes']) as List?;
+
     return ScheduleResponse(
-      academicYear: json['academic_year'] != null
-          ? AcademicYearInfo.fromJson(json['academic_year'])
+      academicYear: payload['academic_year'] != null
+          ? AcademicYearInfo.fromJson(payload['academic_year'])
           : null,
-      semester: json['semester'] ?? '',
-      schedules: (json['schedules'] as List?)
+      semester: payload['semester'] ?? '',
+      schedules: rawSchedules
             ?.map((s) => dashboard.ScheduleItem.fromJson(
               Map<String, dynamic>.from(s as Map),
               ))
               .toList() ??
           [],
-      stats: ScheduleStats.fromJson(json['stats'] ?? {}),
+      stats: ScheduleStats.fromJson(payload['stats'] ?? {}),
     );
   }
 
@@ -76,8 +82,11 @@ class ScheduleStats {
 
   factory ScheduleStats.fromJson(Map<String, dynamic> json) {
     return ScheduleStats(
-      totalHours: (json['total_hours'] as num?)?.toDouble() ?? 0.0,
-      totalClasses: json['total_classes'] ?? 0,
+      totalHours:
+          (json['total_hours'] as num? ?? json['teaching_hours'] as num?)
+                  ?.toDouble() ??
+              0.0,
+      totalClasses: json['total_classes'] ?? json['classes_count'] ?? 0,
       totalStudents: json['total_students'] ?? 0,
       totalRooms: json['total_rooms'] ?? 0,
     );

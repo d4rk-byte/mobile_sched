@@ -8,11 +8,11 @@ class LoadingSkeleton extends StatefulWidget {
   final BorderRadius borderRadius;
 
   const LoadingSkeleton({
-    Key? key,
+    super.key,
     this.height = 20,
     this.width,
     this.borderRadius = const BorderRadius.all(Radius.circular(8)),
-  }) : super(key: key);
+  });
 
   @override
   State<LoadingSkeleton> createState() => _LoadingSkeletonState();
@@ -47,8 +47,8 @@ class _LoadingSkeletonState extends State<LoadingSkeleton>
         borderRadius: widget.borderRadius,
       ),
       child: FadeTransition(
-        opacity: Tween<double>(begin: 0.6, end: 1.0)
-            .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut)),
+        opacity: Tween<double>(begin: 0.6, end: 1.0).animate(
+            CurvedAnimation(parent: _controller, curve: Curves.easeInOut)),
         child: Container(
           color: Colors.grey[200],
         ),

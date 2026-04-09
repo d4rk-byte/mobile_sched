@@ -1,5 +1,7 @@
 // lib/models/schedule_change_request_model.dart
 
+import 'dashboard_model.dart';
+
 class ScheduleChangeRequest {
   final int id;
   final String status;

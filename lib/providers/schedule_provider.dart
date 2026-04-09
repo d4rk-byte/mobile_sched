@@ -14,15 +14,9 @@ final scheduleProvider =
 });
 
 final weeklyScheduleProvider =
-    FutureProvider.family<WeeklyScheduleResponse, String?>((ref, semester) async {
+    FutureProvider.family<WeeklyScheduleResponse, String?>(
+        (ref, semester) async {
   final apiService = ref.watch(apiServiceProvider);
   final response = await apiService.getWeeklySchedule(semester);
   return WeeklyScheduleResponse.fromJson(response);
-});
-
-final classesProvider =
-    FutureProvider.family<ScheduleResponse, String?>((ref, semester) async {
-  final apiService = ref.watch(apiServiceProvider);
-  final response = await apiService.getFacultyClasses(semester);
-  return ScheduleResponse.fromJson(response);
 });

@@ -1,6 +1,7 @@
 // lib/widgets/stat_card.dart
 
 import 'package:flutter/material.dart';
+import '../utils/theme.dart';
 
 class StatCard extends StatelessWidget {
   final String label;
@@ -11,22 +12,23 @@ class StatCard extends StatelessWidget {
   final IconData icon;
 
   const StatCard({
-    Key? key,
+    super.key,
     required this.label,
     required this.value,
     required this.helper,
     required this.backgroundColor,
     required this.iconColor,
     required this.icon,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: AppColors.cardSurface,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFFE5E7EB)),
+        side: const BorderSide(color: AppColors.cardBorder),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -47,7 +49,7 @@ class StatCard extends StatelessWidget {
               label,
               style: const TextStyle(
                 fontSize: 13,
-                color: Color(0xFF6B7280),
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -57,7 +59,7 @@ class StatCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1F2937),
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 4),
@@ -65,7 +67,7 @@ class StatCard extends StatelessWidget {
               helper,
               style: const TextStyle(
                 fontSize: 12,
-                color: Color(0xFF9CA3AF),
+                color: AppColors.textSecondary,
               ),
             ),
           ],
