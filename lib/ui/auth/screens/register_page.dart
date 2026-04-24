@@ -34,6 +34,17 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   String? _employeeIdError;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      ref.read(authProvider.notifier).clearError();
+    });
+  }
+
+  @override
   void dispose() {
     _usernameDebounceTimer?.cancel();
     _employeeIdDebounceTimer?.cancel();
@@ -411,7 +422,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: const Color(0xFF039855),
+          backgroundColor: kAuthFieldAvailableTextColor,
         ),
       );
       Navigator.pushReplacement(
@@ -422,59 +433,75 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   }
 
   Widget _buildBackLink() {
-    return InkWell(
-      onTap: () {
-        Navigator.pop(context);
-      },
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.chevron_left, size: 18, color: kAuthIconColor),
-            const SizedBox(width: 4),
-            Text(
-              'Back to dashboard',
-              style: kAuthBodyText.copyWith(color: kAuthIconColor),
-            ),
-          ],
+    return Semantics(
+      button: true,
+      label: 'Back to dashboard',
+      hint: 'Navigates back to dashboard',
+      child: InkWell(
+        onTap: () {
+          Navigator.pop(context);
+        },
+        borderRadius: BorderRadius.circular(kAuthBackLinkRadius),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: kAuthMicroSpacing),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.chevron_left, size: 18, color: kAuthIconColor),
+              const SizedBox(width: kAuthMicroSpacing),
+              Flexible(
+                child: Text(
+                  'Back to dashboard',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: kAuthBodyText.copyWith(color: kAuthIconColor),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildSocialButton({required String label, required Widget icon}) {
-    return SizedBox(
-      height: 48,
-      child: TextButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$label is not available yet.')),
-          );
-        },
-        style: TextButton.styleFrom(
-          backgroundColor: kAuthCardColor,
-          foregroundColor: kAuthLabelColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: kAuthCardBorderColor),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            icon,
-            const SizedBox(width: 10),
-            Flexible(
-              child: Text(
-                label,
-                style: kAuthBodyText.copyWith(color: kAuthLabelColor),
-                overflow: TextOverflow.ellipsis,
-              ),
+    return Semantics(
+      button: true,
+      label: label,
+      hint: 'Currently unavailable',
+      child: SizedBox(
+        height: kAuthSocialButtonHeight,
+        child: TextButton(
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$label is not available yet.')),
+            );
+          },
+          style: TextButton.styleFrom(
+            backgroundColor: kAuthCardColor,
+            foregroundColor: kAuthLabelColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(kAuthFieldRadius),
+              side: const BorderSide(color: Color(0xFFF0F2F5)),
             ),
-          ],
+            padding: const EdgeInsets.symmetric(
+              horizontal: kAuthFieldContainerHorizontalPadding,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              icon,
+              const SizedBox(width: kAuthComfortSpacing),
+              Flexible(
+                child: Text(
+                  label,
+                  style: kAuthBodyText.copyWith(color: kAuthLabelColor),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -485,7 +512,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       children: [
         Expanded(child: Divider(color: kAuthDividerColor, thickness: 1)),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12),
+          padding: EdgeInsets.symmetric(horizontal: kAuthElementSpacing),
           child: Text('Or', style: kAuthBodyText),
         ),
         Expanded(child: Divider(color: kAuthDividerColor, thickness: 1)),
@@ -502,7 +529,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           const TextSpan(
             text: ' *',
             style: TextStyle(
-              color: Color(0xFFF04438),
+              color: kAuthRequiredAsteriskColor,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -515,10 +542,13 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   Widget _buildErrorIndicator(String message) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: kAuthFieldContainerHorizontalPadding,
+        vertical: kAuthFieldContainerVerticalPadding,
+      ),
       decoration: BoxDecoration(
         color: kAuthErrorBackgroundColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(kAuthFieldRadius),
         border: Border.all(color: kAuthErrorBorderColor, width: 1),
       ),
       child: Row(
@@ -532,7 +562,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               color: kAuthErrorIconColor,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: kAuthCompactSpacing),
           Expanded(
             child: Text(
               message,
@@ -558,11 +588,13 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   }) {
     final hasError = errorText != null && errorText.isNotEmpty;
     final borderColor = hasError
-        ? const Color(0xFFFDA29B)
-        : (available ? const Color(0xFF32D583) : kAuthInputBorderColor);
+        ? kAuthErrorBorderColor
+        : (available ? kAuthFieldAvailableBorderColor : kAuthInputBorderColor);
     final focusedBorderColor = hasError
-        ? const Color(0xFFF04438)
-        : (available ? const Color(0xFF12B76A) : kAuthInputFocusedBorderColor);
+        ? kAuthErrorStrongColor
+        : (available
+            ? kAuthFieldAvailableFocusedColor
+            : kAuthInputFocusedBorderColor);
 
     Widget? suffixIcon;
     if (checking) {
@@ -581,7 +613,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       suffixIcon = const Icon(
         Icons.check_circle,
         size: 18,
-        color: Color(0xFF12B76A),
+        color: kAuthFieldAvailableFocusedColor,
       );
     }
 
@@ -590,30 +622,32 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
     if (hasError) {
       helperText = errorText;
-      helperColor = const Color(0xFFF04438);
+      helperColor = kAuthErrorStrongColor;
     } else if (checking) {
       helperText = checkingText;
       helperColor = kAuthIconColor;
     } else if (available) {
       helperText = availableText;
-      helperColor = const Color(0xFF039855);
+      helperColor = kAuthFieldAvailableTextColor;
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildFieldLabel(label),
-        const SizedBox(height: 6),
+        const SizedBox(height: kAuthTightSpacing),
         TextField(
           controller: controller,
           onChanged: onChanged,
           keyboardType: inputType,
           textInputAction: TextInputAction.next,
-          style: kAuthBodyText.copyWith(color: const Color(0xFF1D2939)),
+          style: kAuthBodyText.copyWith(color: kAuthLabelColor),
           cursorColor: kAuthPrimaryButtonColor,
           decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: kAuthSectionSpacing,
+              vertical: kAuthElementSpacing,
+            ),
             hintText: hint,
             hintStyle: kAuthBodyText.copyWith(color: kAuthInputHintColor),
             filled: true,
@@ -621,22 +655,22 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             suffixIcon: suffixIcon == null
                 ? null
                 : Padding(
-                    padding: const EdgeInsets.only(right: 12),
+                    padding: const EdgeInsets.only(right: kAuthElementSpacing),
                     child: suffixIcon,
                   ),
             suffixIconConstraints: const BoxConstraints(minWidth: 24),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(color: borderColor, width: 1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(kAuthFieldRadius),
             ),
             focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(color: focusedBorderColor, width: 1.2),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(kAuthFieldRadius),
             ),
           ),
         ),
         if (helperText != null) ...[
-          const SizedBox(height: 6),
+          const SizedBox(height: kAuthTightSpacing),
           Text(
             helperText,
             style: kAuthBodyText.copyWith(
@@ -668,6 +702,47 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     );
   }
 
+  Widget _buildSignInPrompt() {
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        const Text(
+          'Already have an account? ',
+          style: kAuthBodyText,
+        ),
+        Semantics(
+          button: true,
+          label: 'Sign In',
+          hint: 'Navigates to sign in',
+          child: TextButton(
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                CupertinoPageRoute(
+                  builder: (context) => const SignInPage(),
+                ),
+              );
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: kAuthLinkColor,
+              padding: EdgeInsets.zero,
+              minimumSize: const Size(0, 0),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Text(
+              'Sign In',
+              style: kAuthBodyText.copyWith(
+                color: kAuthLinkColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -687,289 +762,315 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 640),
+            constraints: const BoxConstraints(maxWidth: kAuthFormMaxWidth),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+              padding: kAuthFormScrollPadding,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildBackLink(),
-                  const SizedBox(height: 24),
-                  const Text('Sign Up', style: kAuthHeadline),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Enter your account details to create account!',
-                    style: kAuthBodyText2,
+                  AuthStaggeredEntrance(
+                    delay: Duration.zero,
+                    child: _buildBackLink(),
                   ),
-                  const SizedBox(height: 24),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      if (constraints.maxWidth >= 460) {
-                        return Row(
-                          children: [
-                            Expanded(
-                              child: _buildSocialButton(
-                                label: 'Sign up with Google',
-                                icon: Text(
-                                  'G',
-                                  style: kAuthBodyText.copyWith(
-                                    color: const Color(0xFF4285F4),
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildSocialButton(
-                                label: 'Sign up with X',
-                                icon: Text(
-                                  'X',
-                                  style: kAuthBodyText.copyWith(
-                                    color: kAuthLabelColor,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      }
-
-                      return Column(
-                        children: [
-                          _buildSocialButton(
-                            label: 'Sign up with Google',
-                            icon: Text(
-                              'G',
-                              style: kAuthBodyText.copyWith(
-                                color: const Color(0xFF4285F4),
-                                fontWeight: FontWeight.w700,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          _buildSocialButton(
-                            label: 'Sign up with X',
-                            icon: Text(
-                              'X',
-                              style: kAuthBodyText.copyWith(
-                                color: kAuthLabelColor,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildOrDivider(),
-                  const SizedBox(height: 16),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      if (constraints.maxWidth >= 520) {
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: _buildAvailabilityField(
-                                label: 'Username',
-                                hint: 'Enter your username',
-                                inputType: TextInputType.name,
-                                controller: _usernameController,
-                                checking: _usernameChecking,
-                                available: _usernameAvailable,
-                                errorText: _usernameError,
-                                onChanged: _onUsernameChanged,
-                                checkingText:
-                                    'Checking username availability...',
-                                availableText: 'Username is available.',
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildAvailabilityField(
-                                label: 'Employee ID',
-                                hint: 'Enter your employee ID',
-                                inputType: TextInputType.text,
-                                controller: _employeeIdController,
-                                checking: _employeeIdChecking,
-                                available: _employeeIdAvailable,
-                                errorText: _employeeIdError,
-                                onChanged: _onEmployeeIdChanged,
-                                checkingText:
-                                    'Checking employee ID availability...',
-                                availableText: 'Employee ID is available.',
-                              ),
-                            ),
-                          ],
-                        );
-                      }
-
-                      return Column(
-                        children: [
-                          _buildAvailabilityField(
-                            label: 'Username',
-                            hint: 'Enter your username',
-                            inputType: TextInputType.name,
-                            controller: _usernameController,
-                            checking: _usernameChecking,
-                            available: _usernameAvailable,
-                            errorText: _usernameError,
-                            onChanged: _onUsernameChanged,
-                            checkingText: 'Checking username availability...',
-                            availableText: 'Username is available.',
-                          ),
-                          const SizedBox(height: 6),
-                          _buildAvailabilityField(
-                            label: 'Employee ID',
-                            hint: 'Enter your employee ID',
-                            inputType: TextInputType.text,
-                            controller: _employeeIdController,
-                            checking: _employeeIdChecking,
-                            available: _employeeIdAvailable,
-                            errorText: _employeeIdError,
-                            onChanged: _onEmployeeIdChanged,
-                            checkingText:
-                                'Checking employee ID availability...',
-                            availableText: 'Employee ID is available.',
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  _buildLabeledTextField(
-                    label: 'Email',
-                    hint: 'Enter your email',
-                    inputType: TextInputType.emailAddress,
-                    controller: _emailController,
-                  ),
-                  _buildFieldLabel('Password'),
-                  AuthPasswordField(
-                    isPasswordVisible: passwordVisibility,
-                    hintText: 'Enter your password',
-                    controller: _passwordController,
-                    onTap: () {
-                      setState(() {
-                        passwordVisibility = !passwordVisibility;
-                      });
-                    },
-                  ),
-                  if (indicatorMessage != null) ...[
-                    const SizedBox(height: 8),
-                    _buildErrorIndicator(indicatorMessage),
-                  ],
-                  const SizedBox(height: 6),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Checkbox(
-                        value: agreeToTerms,
-                        onChanged: (value) {
-                          setState(() {
-                            agreeToTerms = value ?? false;
-                          });
-                        },
-                        activeColor: kAuthPrimaryButtonColor,
-                        checkColor: Colors.white,
-                        side: const BorderSide(color: kAuthInputBorderColor),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
+                  const SizedBox(height: kAuthContentSpacing),
+                  const AuthStaggeredEntrance(
+                    delay: Duration(milliseconds: 40),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Sign Up', style: kAuthHeadline),
+                        SizedBox(height: kAuthCompactSpacing),
+                        Text(
+                          'Enter your account details to create account!',
+                          style: kAuthBodyText2,
                         ),
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: const VisualDensity(
-                          horizontal: -2,
-                          vertical: -2,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: RichText(
-                          text: TextSpan(
-                            style: kAuthBodyText,
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: kAuthContentSpacing),
+                  AuthStaggeredEntrance(
+                    delay: const Duration(milliseconds: 80),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (constraints.maxWidth >= 460) {
+                          return Row(
                             children: [
-                              const TextSpan(
-                                text:
-                                    'By creating an account you agree to the ',
-                              ),
-                              TextSpan(
-                                text: 'Terms and Conditions',
-                                style: kAuthBodyText.copyWith(
-                                  color: kAuthLabelColor,
-                                  fontWeight: FontWeight.w500,
+                              Expanded(
+                                child: _buildSocialButton(
+                                  label: 'Sign up with Google',
+                                  icon: Text(
+                                    'G',
+                                    style: kAuthBodyText.copyWith(
+                                      color: kAuthGoogleBrandColor,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 18,
+                                    ),
+                                  ),
                                 ),
                               ),
-                              const TextSpan(text: ', and our '),
-                              TextSpan(
-                                text: 'Privacy Policy',
-                                style: kAuthBodyText.copyWith(
-                                  color: kAuthLabelColor,
-                                  fontWeight: FontWeight.w500,
+                              const SizedBox(width: kAuthElementSpacing),
+                              Expanded(
+                                child: _buildSocialButton(
+                                  label: 'Sign up with X',
+                                  icon: Text(
+                                    'X',
+                                    style: kAuthBodyText.copyWith(
+                                      color: kAuthLabelColor,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 18,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  AuthTextButton(
-                    buttonName:
-                        authState.isLoading ? 'Creating account...' : 'Sign Up',
-                    onTap: () {
-                      if (!canSubmit) {
-                        if (_usernameChecking || _employeeIdChecking) {
-                          setState(() {
-                            _formError =
-                                'Please wait for username and employee ID validation to finish.';
-                          });
-                        } else if (!agreeToTerms) {
-                          setState(() {
-                            _formError =
-                                'Please agree to the Terms and Conditions.';
-                          });
-                        }
-                        return;
-                      }
-                      _handleRegister();
-                    },
-                    bgColor: canSubmit
-                        ? kAuthPrimaryButtonColor
-                        : const Color(0xFFA8B4FF),
-                    textColor: kAuthPrimaryButtonTextColor,
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Already have an account? ',
-                        style: kAuthBodyText,
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.pushReplacement(
-                            context,
-                            CupertinoPageRoute(
-                              builder: (context) => const SignInPage(),
-                            ),
                           );
-                        },
-                        child: Text(
-                          'Sign In',
-                          style: kAuthBodyText.copyWith(
-                            color: kAuthLinkColor,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        }
+
+                        return Column(
+                          children: [
+                            _buildSocialButton(
+                              label: 'Sign up with Google',
+                              icon: Text(
+                                'G',
+                                style: kAuthBodyText.copyWith(
+                                  color: kAuthGoogleBrandColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: kAuthComfortSpacing),
+                            _buildSocialButton(
+                              label: 'Sign up with X',
+                              icon: Text(
+                                'X',
+                                style: kAuthBodyText.copyWith(
+                                  color: kAuthLabelColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: kAuthSectionSpacing),
+                  AuthStaggeredEntrance(
+                    delay: const Duration(milliseconds: 120),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildOrDivider(),
+                        const SizedBox(height: kAuthSectionSpacing),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            if (constraints.maxWidth >= 520) {
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: _buildAvailabilityField(
+                                      label: 'Username',
+                                      hint: 'Enter your username',
+                                      inputType: TextInputType.name,
+                                      controller: _usernameController,
+                                      checking: _usernameChecking,
+                                      available: _usernameAvailable,
+                                      errorText: _usernameError,
+                                      onChanged: _onUsernameChanged,
+                                      checkingText:
+                                          'Checking username availability...',
+                                      availableText: 'Username is available.',
+                                    ),
+                                  ),
+                                  const SizedBox(width: kAuthSectionSpacing),
+                                  Expanded(
+                                    child: _buildAvailabilityField(
+                                      label: 'Employee ID',
+                                      hint: 'Enter your employee ID',
+                                      inputType: TextInputType.text,
+                                      controller: _employeeIdController,
+                                      checking: _employeeIdChecking,
+                                      available: _employeeIdAvailable,
+                                      errorText: _employeeIdError,
+                                      onChanged: _onEmployeeIdChanged,
+                                      checkingText:
+                                          'Checking employee ID availability...',
+                                      availableText:
+                                          'Employee ID is available.',
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }
+
+                            return Column(
+                              children: [
+                                _buildAvailabilityField(
+                                  label: 'Username',
+                                  hint: 'Enter your username',
+                                  inputType: TextInputType.name,
+                                  controller: _usernameController,
+                                  checking: _usernameChecking,
+                                  available: _usernameAvailable,
+                                  errorText: _usernameError,
+                                  onChanged: _onUsernameChanged,
+                                  checkingText:
+                                      'Checking username availability...',
+                                  availableText: 'Username is available.',
+                                ),
+                                const SizedBox(height: kAuthTightSpacing),
+                                _buildAvailabilityField(
+                                  label: 'Employee ID',
+                                  hint: 'Enter your employee ID',
+                                  inputType: TextInputType.text,
+                                  controller: _employeeIdController,
+                                  checking: _employeeIdChecking,
+                                  available: _employeeIdAvailable,
+                                  errorText: _employeeIdError,
+                                  onChanged: _onEmployeeIdChanged,
+                                  checkingText:
+                                      'Checking employee ID availability...',
+                                  availableText: 'Employee ID is available.',
+                                ),
+                              ],
+                            );
+                          },
                         ),
-                      ),
-                    ],
+                        _buildLabeledTextField(
+                          label: 'Email',
+                          hint: 'Enter your email',
+                          inputType: TextInputType.emailAddress,
+                          controller: _emailController,
+                        ),
+                        _buildFieldLabel('Password'),
+                        AuthPasswordField(
+                          isPasswordVisible: passwordVisibility,
+                          hintText: 'Enter your password',
+                          controller: _passwordController,
+                          onTap: () {
+                            setState(() {
+                              passwordVisibility = !passwordVisibility;
+                            });
+                          },
+                        ),
+                        if (indicatorMessage != null) ...[
+                          const SizedBox(height: kAuthCompactSpacing),
+                          _buildErrorIndicator(indicatorMessage),
+                        ],
+                        const SizedBox(height: kAuthTightSpacing),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Checkbox(
+                              value: agreeToTerms,
+                              onChanged: (value) {
+                                setState(() {
+                                  agreeToTerms = value ?? false;
+                                });
+                              },
+                              semanticLabel:
+                                  'Agree to the Terms and Conditions and Privacy Policy',
+                              activeColor: kAuthPrimaryButtonColor,
+                              checkColor: Colors.white,
+                              side: const BorderSide(
+                                  color: kAuthInputBorderColor),
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(kAuthCheckboxRadius),
+                              ),
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: const VisualDensity(
+                                horizontal: -2,
+                                vertical: -2,
+                              ),
+                            ),
+                            const SizedBox(width: kAuthCompactSpacing),
+                            Expanded(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  setState(() {
+                                    agreeToTerms = !agreeToTerms;
+                                  });
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: kAuthMicroSpacing,
+                                  ),
+                                  child: RichText(
+                                    text: TextSpan(
+                                      style: kAuthBodyText,
+                                      children: [
+                                        const TextSpan(
+                                          text:
+                                              'By creating an account you agree to the ',
+                                        ),
+                                        TextSpan(
+                                          text: 'Terms and Conditions',
+                                          style: kAuthBodyText.copyWith(
+                                            color: kAuthLabelColor,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const TextSpan(text: ', and our '),
+                                        TextSpan(
+                                          text: 'Privacy Policy',
+                                          style: kAuthBodyText.copyWith(
+                                            color: kAuthLabelColor,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: kAuthButtonTopSpacing),
+                  AuthStaggeredEntrance(
+                    delay: const Duration(milliseconds: 170),
+                    child: AuthTextButton(
+                      buttonName: authState.isLoading
+                          ? 'Creating account...'
+                          : 'Sign Up',
+                      onTap: () {
+                        if (!canSubmit) {
+                          if (_usernameChecking || _employeeIdChecking) {
+                            setState(() {
+                              _formError =
+                                  'Please wait for username and employee ID validation to finish.';
+                            });
+                          } else if (!agreeToTerms) {
+                            setState(() {
+                              _formError =
+                                  'Please agree to the Terms and Conditions.';
+                            });
+                          }
+                          return;
+                        }
+                        _handleRegister();
+                      },
+                      bgColor: canSubmit
+                          ? kAuthPrimaryButtonColor
+                          : kAuthPrimaryDisabledColor,
+                      textColor: kAuthPrimaryButtonTextColor,
+                    ),
+                  ),
+                  const SizedBox(height: kAuthPageBottomSpacing),
+                  AuthStaggeredEntrance(
+                    delay: const Duration(milliseconds: 210),
+                    child: Center(
+                      child: _buildSignInPrompt(),
+                    ),
                   ),
                 ],
               ),

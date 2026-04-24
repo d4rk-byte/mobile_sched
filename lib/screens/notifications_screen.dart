@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,15 @@ import '../models/notification_model.dart';
 import '../providers/api_provider.dart';
 import '../providers/notification_provider.dart';
 import '../utils/theme.dart';
+import '../widgets/metadata_chip.dart';
+import '../widgets/screen_shimmer.dart';
+import '../widgets/staggered_list.dart';
+
+const _kNotificationsCardPadding = 14.0;
+const _kNotificationsSectionSpacing = 18.0;
+const _kNotificationsBottomPadding = 28.0;
+const _kNotificationsCompactGap = AppSpacing.sm - 2;
+const _kNotificationsPillVerticalPadding = AppSpacing.sm - 1;
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -127,7 +137,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
-        return _NotificationDetailSheet(item: item);
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+          child: _NotificationDetailSheet(item: item),
+        );
       },
     );
   }
@@ -160,11 +173,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             },
             orElse: () => const SizedBox.shrink(),
           ),
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: _refresh,
-            icon: const Icon(Icons.refresh_rounded),
-          ),
         ],
       ),
       body: notificationsAsync.when(
@@ -172,27 +180,35 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           onRefresh: _refresh,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.xxl,
+            ),
             children: [
-              _NotificationSummaryCard(notifications: notifications),
-              const SizedBox(height: 16),
+              StaggeredItem(
+                index: 0,
+                child: _NotificationSummaryCard(notifications: notifications),
+              ),
+              const SizedBox(height: AppSpacing.lg),
               if (notifications.notifications.isEmpty)
                 const _NotificationsEmptyState()
-              else
-                ...notifications.notifications.map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _NotificationCard(
-                      item: item,
-                      isProcessing: _processingIds.contains(item.id),
-                      onTap: () => _openNotification(item),
-                    ),
+              else ...[for (int i = 0; i < notifications.notifications.length; i++) ...[Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: StaggeredItem(
+                  index: i + 1,
+                  child: _NotificationCard(
+                    item: notifications.notifications[i],
+                    isProcessing: _processingIds.contains(notifications.notifications[i].id),
+                    onTap: () => _openNotification(notifications.notifications[i]),
                   ),
                 ),
+              )]],
             ],
           ),
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const NotificationsShimmer(),
         error: (error, stackTrace) => _NotificationsErrorState(
           message: error.toString(),
           onRetry: _refresh,
@@ -211,12 +227,13 @@ class _NotificationSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final unread = notifications.unreadCount;
     final total = notifications.notifications.length;
+    final textTheme = Theme.of(context).textTheme;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -233,69 +250,34 @@ class _NotificationSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Inbox Overview',
-            style: TextStyle(
+            style: textTheme.titleMedium?.copyWith(
               color: Colors.white,
-              fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 6),
-          const Text(
+          const SizedBox(height: _kNotificationsCompactGap),
+          Text(
             'Stay on top of updates from your classes and admin.',
-            style: TextStyle(
-              color: Color(0xFFE0E7FF),
-              fontSize: 12,
+            style: textTheme.bodySmall?.copyWith(
+              color: const Color(0xFFE0E7FF),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: _kNotificationsCardPadding),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
             children: [
-              _NotificationPill(
+              MetadataChip.onGradient(
                 icon: Icons.mail_outline,
                 text: '$total total',
               ),
-              _NotificationPill(
+              MetadataChip.onGradient(
                 icon: Icons.mark_email_unread_outlined,
                 text: '$unread unread',
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NotificationPill extends StatelessWidget {
-  final IconData icon;
-  final String text;
-
-  const _NotificationPill({required this.icon, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(99),
-        color: Colors.white.withValues(alpha: 0.16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: Colors.white),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
           ),
         ],
       ),
@@ -317,7 +299,9 @@ class _NotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = _accentColor(item.type);
+    final section = _extractSectionLabel(item.metadata);
     final isUnread = !item.read;
+    final textTheme = Theme.of(context).textTheme;
     final cardColor =
         isUnread ? accent.withValues(alpha: 0.06) : AppColors.cardSurface;
     final borderColor =
@@ -325,14 +309,14 @@ class _NotificationCard extends StatelessWidget {
 
     return Material(
       color: cardColor,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(_kNotificationsCardPadding),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(
               color: borderColor,
             ),
@@ -344,21 +328,25 @@ class _NotificationCard extends StatelessWidget {
                       offset: const Offset(0, 4),
                     ),
                   ]
-                : null,
+                : AppShadow.card,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(11),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                   color: accent.withValues(alpha: 0.14),
+                  border: Border.all(
+                    color: accent.withValues(alpha: 0.22),
+                    width: 1,
+                  ),
                 ),
                 child: Icon(_iconForType(item.type), color: accent, size: 18),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -369,15 +357,14 @@ class _NotificationCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             item.title,
-                            style: TextStyle(
+                            style: textTheme.titleMedium?.copyWith(
                               fontWeight:
                                   item.read ? FontWeight.w600 : FontWeight.w700,
-                              fontSize: 14,
                               color: AppColors.textPrimary,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppSpacing.sm),
                         if (isProcessing)
                           const SizedBox(
                             width: 14,
@@ -391,13 +378,12 @@ class _NotificationCard extends StatelessWidget {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: _kNotificationsCompactGap),
                     Text(
                       item.message,
                       maxLines: 4,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: textTheme.bodySmall?.copyWith(
                         color: isUnread
                             ? AppColors.textPrimary.withValues(alpha: 0.82)
                             : AppColors.textSecondary,
@@ -405,7 +391,30 @@ class _NotificationCard extends StatelessWidget {
                             isUnread ? FontWeight.w500 : FontWeight.w400,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    if (section != null) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.groups_2_outlined,
+                            size: 12,
+                            color:
+                                AppColors.textSecondary.withValues(alpha: 0.9),
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: Text(
+                              'Section: $section',
+                              style: textTheme.labelMedium?.copyWith(
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.sm),
                     Row(
                       children: [
                         Icon(
@@ -413,12 +422,11 @@ class _NotificationCard extends StatelessWidget {
                           size: 12,
                           color: AppColors.textSecondary.withValues(alpha: 0.9),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: AppSpacing.xs),
                         Expanded(
                           child: Text(
                             item.createdAt,
-                            style: const TextStyle(
-                              fontSize: 11,
+                            style: textTheme.labelMedium?.copyWith(
                               color: AppColors.textSecondary,
                             ),
                           ),
@@ -427,11 +435,12 @@ class _NotificationCard extends StatelessWidget {
                     ),
                     if (isUnread)
                       Padding(
-                        padding: const EdgeInsets.only(top: 6),
+                        padding: const EdgeInsets.only(
+                          top: _kNotificationsCompactGap,
+                        ),
                         child: Text(
                           'Tap to mark as viewed',
-                          style: TextStyle(
-                            fontSize: 11,
+                          style: textTheme.labelMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: accent,
                           ),
@@ -482,6 +491,7 @@ class _NotificationStateChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     final color = isRead ? AppColors.textSecondary : accent;
     final background =
         isRead ? AppColors.whiteColor : accent.withValues(alpha: 0.14);
@@ -489,10 +499,13 @@ class _NotificationStateChip extends StatelessWidget {
         isRead ? AppColors.cardBorder : accent.withValues(alpha: 0.4);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
         border: Border.all(color: borderColor),
       ),
       child: Row(
@@ -505,11 +518,10 @@ class _NotificationStateChip extends StatelessWidget {
             size: 11,
             color: color,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSpacing.xs),
           Text(
             isRead ? 'Viewed' : 'New',
-            style: TextStyle(
-              fontSize: 10,
+            style: textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.w700,
               color: color,
             ),
@@ -527,15 +539,23 @@ class _NotificationDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final section = _extractSectionLabel(item.metadata);
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.xl,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -546,37 +566,44 @@ class _NotificationDetailSheet extends StatelessWidget {
                   height: 4,
                   decoration: BoxDecoration(
                     color: const Color(0xFFE2E8F0),
-                    borderRadius: BorderRadius.circular(99),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: _kNotificationsCardPadding),
               Text(
                 item.title,
-                style: const TextStyle(
-                  fontSize: 18,
+                style: textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 item.createdAt,
-                style: const TextStyle(
-                  fontSize: 12,
+                style: textTheme.bodySmall?.copyWith(
                   color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 14),
+              if (section != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Section: $section',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+              const SizedBox(height: _kNotificationsCardPadding),
               Text(
                 item.message,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: textTheme.bodyMedium?.copyWith(
                   height: 1.5,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: _kNotificationsSectionSpacing),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
@@ -592,41 +619,83 @@ class _NotificationDetailSheet extends StatelessWidget {
   }
 }
 
+String? _extractSectionLabel(Map<String, dynamic>? metadata) {
+  if (metadata == null || metadata.isEmpty) {
+    return null;
+  }
+
+  const directKeys = [
+    'section',
+    'section_code',
+    'sectionCode',
+    'section_name',
+    'sectionName',
+    'class_section',
+    'classSection',
+  ];
+
+  for (final key in directKeys) {
+    final value = metadata[key];
+    if (value != null) {
+      final normalized = value.toString().trim();
+      if (normalized.isNotEmpty) {
+        return normalized;
+      }
+    }
+  }
+
+  const nestedKeys = ['class', 'schedule'];
+  for (final key in nestedKeys) {
+    final nested = metadata[key];
+    if (nested is Map) {
+      final section = _extractSectionLabel(Map<String, dynamic>.from(nested));
+      if (section != null) {
+        return section;
+      }
+    }
+  }
+
+  return null;
+}
+
 class _NotificationsEmptyState extends StatelessWidget {
   const _NotificationsEmptyState();
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),
+      padding: const EdgeInsets.symmetric(
+        horizontal: _kNotificationsSectionSpacing,
+        vertical: _kNotificationsBottomPadding,
+      ),
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.cardBorder),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.notifications_off_outlined,
             size: 36,
             color: AppColors.textSecondary,
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.md),
           Text(
             'No notifications yet',
-            style: TextStyle(
-              fontSize: 14,
+            style: textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             'You are all caught up for now.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
+            style: textTheme.bodySmall?.copyWith(
               color: AppColors.textSecondary,
             ),
           ),
@@ -647,28 +716,30 @@ class _NotificationsErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.error_outline, size: 40, color: AppColors.error),
-            const SizedBox(height: 12),
-            const Text(
+            const SizedBox(height: AppSpacing.md),
+            Text(
               'Unable to load notifications',
-              style: TextStyle(
-                fontSize: 16,
+              style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: _kNotificationsCompactGap),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.textSecondary),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             FilledButton.icon(
               onPressed: () => onRetry(),
               icon: const Icon(Icons.refresh_rounded),

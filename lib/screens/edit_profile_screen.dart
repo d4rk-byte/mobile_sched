@@ -4,6 +4,8 @@ import '../providers/auth_provider.dart';
 import '../providers/api_provider.dart';
 import '../utils/theme.dart';
 
+const _kEditProfileButtonVerticalPadding = 14.0;
+
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -112,11 +114,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             if (_errorMessage != null) ...[
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: AppColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -127,7 +129,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   children: [
                     const Icon(Icons.error_outline,
                         color: AppColors.error, size: 20),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
                         _errorMessage!,
@@ -140,10 +142,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
             ],
             _buildSectionTitle('Personal Information'),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             _buildTextField(
               controller: _firstNameController,
               label: 'First Name',
@@ -155,13 +157,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             _buildTextField(
               controller: _middleNameController,
               label: 'Middle Name (Optional)',
               icon: Icons.person_outline,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             _buildTextField(
               controller: _lastNameController,
               label: 'Last Name',
@@ -173,36 +175,36 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             _buildSectionTitle('Employment Information'),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             _buildTextField(
               controller: _employeeIdController,
               label: 'Employee ID',
               icon: Icons.badge_outlined,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             _buildTextField(
               controller: _positionController,
               label: 'Position',
               icon: Icons.work_outline,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             _buildTextField(
               controller: _otherDesignationController,
               label: 'Other Designation (Optional)',
               icon: Icons.star_outline,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             _buildSectionTitle('Contact Information'),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             _buildTextField(
               controller: _addressController,
               label: 'Address',
               icon: Icons.location_on_outlined,
               maxLines: 3,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -219,7 +221,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     : const Icon(Icons.save_outlined),
                 label: Text(_isLoading ? 'Saving...' : 'Save Changes'),
                 style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: _kEditProfileButtonVerticalPadding,
+                  ),
                 ),
               ),
             ),
@@ -262,7 +266,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.cardPrimaryEnd, width: 2),
+          borderSide:
+              const BorderSide(color: AppColors.cardPrimaryEnd, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

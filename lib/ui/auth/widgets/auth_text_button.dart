@@ -17,12 +17,16 @@ class AuthTextButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final overlayColor = bgColor == Colors.transparent
+        ? kAuthPrimaryButtonColor.withValues(alpha: 0.10)
+        : kAuthPrimaryButtonColor.withValues(alpha: 0.18);
+
     return Container(
-      height: 56,
+      height: kAuthControlHeight,
       width: double.infinity,
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(kAuthFieldRadius),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0D101828),
@@ -34,7 +38,12 @@ class AuthTextButton extends StatelessWidget {
       child: TextButton(
         style: ButtonStyle(
           overlayColor: WidgetStateProperty.resolveWith(
-            (states) => const Color(0x1A465FFF),
+            (states) => overlayColor,
+          ),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(kAuthFieldRadius),
+            ),
           ),
         ),
         onPressed: onTap,

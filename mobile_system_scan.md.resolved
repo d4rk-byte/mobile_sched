@@ -1,0 +1,420 @@
+# 📱 Mobile System Scan — `scheduling_mobile`
+
+> **Scanned:** April 23, 2026  
+> **Project:** Faculty Dashboard — NORSU Scheduling System Mobile App  
+> **Framework:** Flutter 3.x (Dart SDK ^3.11.0)  
+> **State Mgmt:** Riverpod (`flutter_riverpod`) + legacy `ChangeNotifier`  
+
+---
+
+## 1. Project Overview
+
+| Attribute | Value |
+|---|---|
+| Package name | `scheduling_mobile` |
+| Version | `1.0.0+1` |
+| Min SDK | `^3.11.0` |
+| Font | Outfit (bundled), Poppins (Google Fonts — runtime) |
+| Theme mode | Light only (`ThemeMode.light`) |
+| Target platforms | Android, iOS, Web |
+
+### Purpose
+A faculty-facing mobile companion to a Symfony-based scheduling backend. Faculty members log in, view their dashboard & class schedule, manage notifications, submit schedule-change requests, and complete their profile.
+
+---
+
+## 2. Dependency Summary
+
+| Package | Version | Purpose |
+|---|---|---|
+| `provider` | ^6.1.2 | Listed but **not actually used** — Riverpod is the real state manager |
+| `flutter_riverpod` | (in lock) | Actual state management |
+| `http` | ^1.2.1 | REST API calls |
+| `flutter_secure_storage` | ^9.2.2 | Token & credential storage |
+| `intl` | ^0.19.0 | Date/time formatting |
+| `cupertino_icons` | ^1.0.8 | iOS-style icons |
+| `google_fonts` | (in lock) | Runtime font loading (Poppins) |
+| `flutter_local_notifications` | (in lock) | Class reminder notifications |
+| `timezone` | (in lock) | Timezone-aware scheduling |
+
+> [!WARNING]
+> `google_fonts` runtime fetching is **disabled** (`allowRuntimeFetching = false`) in [main.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/main.dart#L26), yet `LoginScreen` uses `GoogleFonts.poppins()` everywhere — this will silently fall back to the default font.
+
+> [!WARNING]
+> `provider` package is in `pubspec.yaml` but the app exclusively uses `flutter_riverpod`. This is dead weight.
+
+---
+
+## 3. Architecture
+
+```mermaid
+graph TB
+    subgraph "UI Layer"
+        Main["main.dart<br/>(MyApp, MainScreen)"]
+        Auth["Auth Screens<br/>(WelcomePage, SignInPage, RegisterPage, LoginScreen)"]
+        Dash["DashboardScreen"]
+        Sched["ScheduleScreen"]
+        Notif["NotificationsScreen"]
+        Prof["ProfileScreen"]
+        SCR["ScheduleChangeRequestScreen"]
+        CPW["ChangePasswordScreen"]
+        EP["EditProfileScreen"]
+    end
+
+    subgraph "State Layer (Riverpod)"
+        AP["authProvider"]
+        DP["dashboardProvider"]
+        SP["scheduleProvider"]
+        NP["notificationProvider"]
+        CNP["classNotificationProvider"]
+        API_P["apiServiceProvider"]
+    end
+
+    subgraph "Service Layer"
+        API["ApiService"]
+        SS["SecureStorageService"]
+        CNS["ClassNotificationService"]
+    end
+
+    subgraph "Models"
+        UM["UserProfile / User"]
+        DM["DashboardData"]
+        SM["ScheduleResponse"]
+        NM["NotificationItem"]
+        CM["ConflictModel"]
+        SCRM["ScheduleChangeRequest"]
+    end
+
+    Main --> AP
+    Main --> Auth
+    Main --> Dash
+    Dash --> DP
+    Sched --> SP
+    Notif --> NP
+    Prof --> AP
+    SCR --> API_P
+
+    AP --> API
+    DP --> API
+    SP --> API
+    NP --> API
+    API --> SS
+    CNP --> CNS
+```
+
+### Layer Breakdown
+
+| Layer | Directory | Files |
+|---|---|---|
+| Entry point | `lib/` | [main.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/main.dart) |
+| Screens | `lib/screens/` | 9 files + 4 subdirectories |
+| UI (auth) | `lib/ui/auth/` | Welcome, SignIn, Register pages + widgets |
+| Widgets | `lib/widgets/` | 8 files (loading screen, profile dialog, schedule tiles, etc.) |
+| Providers | `lib/providers/` | 6 files |
+| Services | `lib/services/` | 5 files (2 empty) |
+| Models | `lib/models/` | 9 files (2 empty) |
+| Config | `lib/config/` | 2 files (**both empty**) |
+| App config | `lib/app/configs/` | [theme.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/app/configs/theme.dart), [colors.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/app/configs/colors.dart) |
+| Utils | `lib/utils/` | 3 files |
+| Data | `lib/data/` | 2 files (unused `GalleryModel`, `PostModel`) |
+
+---
+
+## 4. File-by-File Inventory
+
+### 4.1 Entry Point
+
+| File | Lines | Purpose |
+|---|---|---|
+| [main.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/main.dart) | 334 | App bootstrap, animated splash → auth check → `MainScreen` with bottom nav |
+
+### 4.2 Screens
+
+| File | Lines | Purpose |
+|---|---|---|
+| [dashboard_screen.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/screens/dashboard_screen.dart) | 628 | Faculty dashboard with stats grid + today's schedule |
+| [schedule_screen.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/screens/schedule_screen.dart) | ~600 | Full schedule view with semester filtering |
+| [notifications_screen.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/screens/notifications_screen.dart) | ~640 | Notification list with mark-read, optimistic UI |
+| [profile_screen.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/screens/profile_screen.dart) | ~360 | Faculty profile view |
+| [schedule_change_request_screen.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/screens/schedule_change_request_screen.dart) | **2818** | Full CRUD for schedule change requests with conflict checking |
+| [login_screen.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/screens/login_screen.dart) | 385 | Standalone login screen (green theme, Poppins font) |
+| [edit_profile_screen.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/screens/edit_profile_screen.dart) | ~250 | Profile editing |
+| [change_password_screen.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/screens/change_password_screen.dart) | ~250 | Password change |
+| [pdf_viewer_screen.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/screens/pdf_viewer_screen.dart) | ~110 | PDF viewer |
+
+### 4.3 UI Auth Pages (Polished)
+
+| File | Lines | Purpose |
+|---|---|---|
+| [welcome_page.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/ui/auth/screens/welcome_page.dart) | ~170 | Welcome landing with sign-in/register buttons |
+| [signin_page.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/ui/auth/screens/signin_page.dart) | 609 | Full-featured sign-in (social buttons, error handling, approval pending) |
+| [register_page.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/ui/auth/screens/register_page.dart) | ~1000 | Multi-step registration |
+| [auth_constants.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/ui/auth/auth_constants.dart) | 97 | Design tokens for auth screens |
+
+### 4.4 Widgets
+
+| File | Lines | Purpose |
+|---|---|---|
+| [app_opening_loading_screen.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/widgets/app_opening_loading_screen.dart) | 350 | Animated splash with heartbeat logo |
+| [faculty_profile_completion_dialog.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/widgets/faculty_profile_completion_dialog.dart) | 725 | Modal dialog to complete profile (college/dept dropdowns) |
+| [conflict_widgets.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/widgets/conflict_widgets.dart) | 225 | Conflict badges, detail cards, dialog |
+| [schedule_tile.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/widgets/schedule_tile.dart) | ~90 | Schedule list tile |
+| [stat_card.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/widgets/stat_card.dart) | ~60 | Dashboard stat card |
+| [loading_skeleton.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/widgets/loading_skeleton.dart) | ~45 | Skeleton loading placeholder |
+| [error_widget.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/widgets/error_widget.dart) | ~35 | Error display widget |
+| [schedule_card.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/widgets/schedule_card.dart) | **0 (empty)** | ⚠️ Empty file |
+
+### 4.5 Providers (Riverpod)
+
+| File | Lines | Purpose |
+|---|---|---|
+| [auth_provider.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/providers/auth_provider.dart) | 123 | ⚠️ Uses `ChangeNotifier` — conflicts with Riverpod usage in screens |
+| [api_provider.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/providers/api_provider.dart) | 57 | Platform-aware base URL + `ApiService` & `SecureStorageService` providers |
+| [dashboard_provider.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/providers/dashboard_provider.dart) | 22 | `FutureProvider<DashboardData>` |
+| [schedule_provider.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/providers/schedule_provider.dart) | 23 | `FutureProvider.family` for schedule/semester |
+| [notification_provider.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/providers/notification_provider.dart) | 111 | Notifications with optimistic read state |
+| [class_notification_provider.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/providers/class_notification_provider.dart) | 10 | Wraps `ClassNotificationService` |
+
+### 4.6 Services
+
+| File | Lines | Purpose |
+|---|---|---|
+| [api_service.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/services/api_service.dart) | 147 | Singleton HTTP client (generic GET/POST/PUT/DELETE) |
+| [secure_storage_service.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/services/secure_storage_service.dart) | 52 | Token & user data in FlutterSecureStorage |
+| [class_notification_service.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/services/class_notification_service.dart) | 216 | Local notification scheduling (5-min & start-time reminders) |
+| [auth_service.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/services/auth_service.dart) | **0 (empty)** | ⚠️ Empty — `AuthProvider` imports and calls it |
+| [schedule_service.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/services/schedule_service.dart) | **0 (empty)** | ⚠️ Empty |
+
+### 4.7 Models
+
+| File | Lines | Purpose |
+|---|---|---|
+| [user_model.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/models/user_model.dart) | 132 | `UserProfile`, `Department`, `College` with `toJson()` |
+| [faculty_models.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/models/faculty_models.dart) | 316 | ⚠️ **Duplicates** `UserProfile`, `Department`, `College`, `DashboardData`, `ScheduleItem`, `Subject`, `Room`, `NotificationItem` |
+| [dashboard_model.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/models/dashboard_model.dart) | 295 | `DashboardData`, `DashboardStats`, `ScheduleItem` (with `timeStatus`), `Subject`, `Room` |
+| [schedule_model.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/models/schedule_model.dart) | 138 | `ScheduleResponse`, `ScheduleStats`, `WeeklyScheduleResponse` |
+| [notification_model.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/models/notification_model.dart) | 208 | `NotificationItem` (robust parsing), `NotificationsResponse` |
+| [conflict_model.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/models/conflict_model.dart) | 184 | `ConflictDetail`, `ConflictSchedule`, `ConflictCheckResult` |
+| [schedule_change_request_model.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/models/schedule_change_request_model.dart) | 126 | `ScheduleChangeRequest`, `ScheduleChangeRequestInput`, local `Department` |
+| [user.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/models/user.dart) | **0 (empty)** | ⚠️ Empty — `AuthProvider` imports it |
+| [schedule.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/models/schedule.dart) | **0 (empty)** | ⚠️ Empty |
+
+### 4.8 Config & Utils
+
+| File | Lines | Purpose |
+|---|---|---|
+| [app/configs/theme.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/app/configs/theme.dart) | 423 | **Main design system** — `AppColors`, `AppSpacing`, `AppRadius`, `AppMotion`, `AppTheme` (light + dark) |
+| [app/configs/colors.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/app/configs/colors.dart) | 23 | ⚠️ Separate `AppColors` class with **different values** (purple primary vs blue in theme.dart) |
+| [config/api_config.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/config/api_config.dart) | **0 (empty)** | ⚠️ Empty — `ApiService` imports `ApiConfig.baseUrl` from here |
+| [config/app_theme.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/config/app_theme.dart) | **0 (empty)** | ⚠️ Empty |
+| [utils/theme.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/utils/theme.dart) | 5 | Re-exports `app/configs/theme.dart` |
+| [utils/constants.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/utils/constants.dart) | 44 | API base URL, semester options, day list, status labels/colors |
+| [utils/date_formatter.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/utils/date_formatter.dart) | 57 | Time/date formatting utilities |
+
+### 4.9 Data (Unused Legacy)
+
+| File | Lines | Purpose |
+|---|---|---|
+| [data/gallery_model.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/data/gallery_model.dart) | 24 | ⚠️ Unused — leftover from a template |
+| [data/post_model.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/data/post_model.dart) | 36 | ⚠️ Unused — leftover from a template |
+
+---
+
+## 5. 🚨 Critical Issues Found
+
+### 5.1 Empty Files That Are Imported
+
+These files are **empty (0 bytes)** but imported by other code, causing **compile-time failures**:
+
+| Empty File | Imported By | Impact |
+|---|---|---|
+| `config/api_config.dart` | `services/api_service.dart` → `ApiConfig.baseUrl` | ❌ **Build will fail** — `ApiConfig` class doesn't exist |
+| `services/auth_service.dart` | `providers/auth_provider.dart` → `AuthService()` | ❌ **Build will fail** — `AuthService` class doesn't exist |
+| `models/user.dart` | `providers/auth_provider.dart` → `User` type | ❌ **Build will fail** — `User` class doesn't exist |
+| `models/schedule.dart` | (potentially imported) | ⚠️ Empty placeholder |
+| `config/app_theme.dart` | (not imported) | ⚠️ Dead file |
+| `widgets/schedule_card.dart` | (not imported) | ⚠️ Dead file |
+
+> [!CAUTION]
+> The combination of empty `auth_service.dart`, `user.dart`, and `api_config.dart` means the app **cannot compile** as-is. These are foundational files that core providers depend on.
+
+### 5.2 Dual State Management Conflict
+
+The [auth_provider.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/providers/auth_provider.dart) uses `ChangeNotifier` (Provider pattern):
+```dart
+class AuthProvider extends ChangeNotifier { ... }
+```
+
+But **every screen** uses it as a Riverpod provider with `ref.watch(authProvider)` and `ref.read(authProvider.notifier)`, expecting `AuthState` and `AuthNotifier` types that **don't exist** in the current file.
+
+> [!IMPORTANT]
+> There must be a **different version** of `auth_provider.dart` that defines Riverpod's `StateNotifierProvider<AuthNotifier, AuthState>`. The current file is the **wrong implementation** — it's a `ChangeNotifier`-based provider that doesn't match how screens consume it.
+
+### 5.3 ApiService Constructor Mismatch
+
+- [api_provider.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/providers/api_provider.dart#L49) calls `ApiService(baseUrl: baseUrl)`
+- [api_service.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/services/api_service.dart#L8) defines `factory ApiService() => _instance` — **no `baseUrl` parameter**
+
+Additionally, providers call methods like `getFacultyDashboard()`, `getFacultySchedule()`, `getNotifications()`, `hasToken`, `getColleges()`, `getDepartments()`, `listScheduleChangeRequests()`, `listRooms()`, `checkScheduleChangeConflict()`, `cancelScheduleChangeRequest()`, etc. — **none of these exist** in the current `api_service.dart`.
+
+> [!CAUTION]
+> The `ApiService` has only generic `get()/post()/put()/delete()` methods. All domain-specific methods are **missing**.
+
+### 5.4 Duplicate Model Definitions
+
+[faculty_models.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/models/faculty_models.dart) duplicates classes from multiple other model files:
+
+| Class | Also defined in |
+|---|---|
+| `UserProfile` | `user_model.dart` (with extra `middleName`, `otherDesignation`, `toJson()`) |
+| `Department` | `user_model.dart`, `schedule_change_request_model.dart` |
+| `College` | `user_model.dart` |
+| `DashboardData` | `dashboard_model.dart` (with `toJson()`) |
+| `DashboardStats` | `dashboard_model.dart` (with `toJson()`) |
+| `AcademicYear` | `dashboard_model.dart` (with `toJson()`) |
+| `ScheduleItem` | `dashboard_model.dart` (with `timeStatus`, `toJson()`) |
+| `Subject` | `dashboard_model.dart` (with `toJson()`) |
+| `Room` | `dashboard_model.dart` (with `toJson()`) |
+| `NotificationItem` | `notification_model.dart` (much more robust parsing) |
+
+The duplicates in `faculty_models.dart` are **less featured** (missing `toJson()`, `timeStatus`, `copyWith()`, etc.). This will cause ambiguous import errors.
+
+### 5.5 `auth_provider.dart` Line 1 Syntax Error
+
+```dart
+-import 'package:flutter/material.dart';
+```
+
+Line 1 has a leading `-` character — this is a **syntax error** that will prevent compilation.
+
+---
+
+## 6. ⚠️ Non-Critical Issues
+
+### 6.1 Duplicate AppColors Classes
+
+Two separate `AppColors` classes exist with **different color palettes**:
+
+| File | Primary Color | Notes |
+|---|---|---|
+| [app/configs/theme.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/app/configs/theme.dart) | `#465FFF` (blue) | **Used by the app** — main design system |
+| [app/configs/colors.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/app/configs/colors.dart) | `#7D50F0` (purple) | ⚠️ Unused legacy — different values |
+
+### 6.2 Login Screen Style Mismatch
+
+[login_screen.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/screens/login_screen.dart) uses:
+- `GoogleFonts.poppins()` (can't load at runtime since fetching is disabled)
+- Green color scheme (`#4CAF50`) instead of the app's blue theme (`#465FFF`)
+- Its own input decoration, **ignoring** the app theme
+
+Meanwhile, [signin_page.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/ui/auth/screens/signin_page.dart) uses the proper design system (`auth_constants.dart` → `AppColors`). These are **two competing login screens**.
+
+### 6.3 Unused Legacy Data Models
+
+`lib/data/gallery_model.dart` and `lib/data/post_model.dart` appear to be leftover from a starter template and have nothing to do with scheduling.
+
+### 6.4 Hardcoded API URL in Constants
+
+[utils/constants.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/utils/constants.dart#L5) has `const String apiBaseUrl = 'http://localhost:8000/api'` while `api_provider.dart` has platform-aware URL resolution. The constant is likely unused but could cause confusion.
+
+### 6.5 No `.env` File
+
+Only `.env.example` exists — no actual `.env` file for runtime configuration.
+
+---
+
+## 7. Screen Navigation Flow
+
+```mermaid
+graph LR
+    Splash["AppOpeningLoadingScreen"] --> AuthCheck{Authenticated?}
+    AuthCheck -->|No| Welcome["WelcomePage"]
+    AuthCheck -->|Yes| MainScreen
+    Welcome --> SignIn["SignInPage"]
+    Welcome --> Register["RegisterPage"]
+    SignIn -->|Success| MainScreen
+    Register -->|Success| MainScreen
+
+    MainScreen --> Dashboard["DashboardScreen"]
+    MainScreen --> Schedule["ScheduleScreen"]
+    MainScreen --> Notifications["NotificationsScreen"]
+    MainScreen --> Profile["ProfileScreen"]
+
+    Profile --> EditProfile["EditProfileScreen"]
+    Profile --> ChangePassword["ChangePasswordScreen"]
+    Schedule --> SCR["ScheduleChangeRequestScreen"]
+
+    MainScreen -.->|"Profile incomplete"| CompletionDialog["FacultyProfileCompletionDialog"]
+```
+
+---
+
+## 8. API Endpoints Used
+
+Based on code references across all providers and screens:
+
+| Endpoint | Method | Used By |
+|---|---|---|
+| `/auth/login` | POST | `authProvider` |
+| `/auth/register` | POST | `authProvider` |
+| `/faculty/profile` | GET | `authProvider` |
+| `/faculty/profile` | PUT | `editProfileScreen`, `profileCompletionDialog` |
+| `/faculty/dashboard` | GET | `dashboardProvider` |
+| `/faculty/schedule` | GET | `scheduleProvider` |
+| `/faculty/schedule/weekly` | GET | `weeklyScheduleProvider` |
+| `/faculty/notifications` | GET | `notificationsProvider` |
+| `/faculty/notifications/unread-count` | GET | `unreadNotificationCountProvider` |
+| `/faculty/notifications/{id}/read` | PUT | `notificationsScreen` |
+| `/faculty/notifications/mark-all-read` | PUT | `notificationsScreen` |
+| `/faculty/change-password` | POST | `changePasswordScreen` |
+| `/faculty/schedule-change-requests` | GET/POST | `scheduleChangeRequestScreen` |
+| `/faculty/schedule-change-requests/{id}/cancel` | POST | `scheduleChangeRequestScreen` |
+| `/faculty/schedule-change-requests/check-conflict` | POST | `scheduleChangeRequestScreen` |
+| `/reference/colleges` | GET | `profileCompletionDialog` |
+| `/reference/departments` | GET | `profileCompletionDialog` |
+| `/reference/rooms` | GET | `scheduleChangeRequestScreen` |
+
+---
+
+## 9. Theme System Summary
+
+The primary design system in [app/configs/theme.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/app/configs/theme.dart):
+
+- **Font:** Outfit (bundled in `assets/fonts/`)
+- **Primary:** `#465FFF` (vibrant blue)
+- **Card gradient:** `#1D4ED8` → `#465FFF`
+- **Background:** `#F4F7FC` (light blueish gray)
+- **Text primary:** `#111827` / Secondary: `#667085`
+- **Both light and dark themes** defined (dark theme not exposed to user)
+- **Material 3** enabled
+- Consistent `AppSpacing`, `AppRadius`, `AppMotion` design tokens
+
+---
+
+## 10. Summary of Actions Needed
+
+> [!IMPORTANT]
+> **Priority fixes required before the app can compile:**
+
+| # | Issue | Priority | Effort |
+|---|---|---|---|
+| 1 | Fix line 1 syntax error in `auth_provider.dart` (remove leading `-`) | 🔴 Critical | 1 min |
+| 2 | Implement `AuthService` in `services/auth_service.dart` (or replace with Riverpod-based auth) | 🔴 Critical | Medium |
+| 3 | Implement `User` model in `models/user.dart` (or redirect to `UserProfile`) | 🔴 Critical | Small |
+| 4 | Implement `ApiConfig` in `config/api_config.dart` | 🔴 Critical | Small |
+| 5 | Add missing domain methods to `ApiService` (20+ methods referenced) | 🔴 Critical | Large |
+| 6 | Reconcile `AuthProvider` (ChangeNotifier) → `AuthNotifier`/`AuthState` (Riverpod) | 🔴 Critical | Medium |
+| 7 | Resolve duplicate model classes in `faculty_models.dart` | 🟡 High | Medium |
+| 8 | Remove unused `provider` package from `pubspec.yaml` | 🟢 Low | 1 min |
+| 9 | Remove unused `data/` models (`GalleryModel`, `PostModel`) | 🟢 Low | 1 min |
+| 10 | Consolidate login screens (`login_screen.dart` vs `signin_page.dart`) | 🟡 High | Medium |
+| 11 | Remove or fill dead config files (`config/app_theme.dart`, `widgets/schedule_card.dart`) | 🟢 Low | 1 min |
+| 12 | Fix `GoogleFonts.poppins()` usage with runtime fetching disabled | 🟡 High | Small |
+| 13 | Consolidate duplicate `AppColors` classes | 🟢 Low | Small |
+
+---
+
+> **Total Dart files scanned:** ~50  
+> **Total lines of Dart code:** ~10,500+  
+> **Critical blocking issues:** 6  
+> **Non-blocking issues:** 7

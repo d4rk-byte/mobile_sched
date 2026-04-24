@@ -51,6 +51,14 @@ final notificationOptimisticStateProvider =
 final notificationsProvider =
     FutureProvider<NotificationsResponse>((ref) async {
   final apiService = ref.watch(apiServiceProvider);
+
+  if (!apiService.hasToken) {
+    return NotificationsResponse(
+      notifications: const <NotificationItem>[],
+      unreadCount: 0,
+    );
+  }
+
   final response = await apiService.getNotifications();
   return NotificationsResponse.fromJson(response);
 });
@@ -82,6 +90,11 @@ final effectiveNotificationsProvider =
 
 final unreadNotificationCountProvider = FutureProvider<int>((ref) async {
   final apiService = ref.watch(apiServiceProvider);
+
+  if (!apiService.hasToken) {
+    return 0;
+  }
+
   return await apiService.getUnreadNotificationCount();
 });
 

@@ -5,11 +5,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/dashboard_model.dart';
 import '../models/conflict_model.dart';
 import '../providers/api_provider.dart';
+import '../providers/dashboard_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../utils/theme.dart';
 import '../widgets/conflict_widgets.dart';
 
 const _requestFilters = <String>['All', 'Pending', 'Approved', 'Rejected'];
+
+const _kRequestCompactGap = 6.0;
+const _kRequestControlGap = 10.0;
+const _kRequestCardPadding = 14.0;
+const _kRequestMicroGap = 2.0;
+const _kRequestLargeLoadingPadding = 40.0;
+const _kRequestErrorVerticalPadding = 22.0;
+const _kRequestBadgeVerticalPadding = 5.0;
 
 final _scheduleChangeRequestsProvider =
     FutureProvider.family<List<Map<String, dynamic>>, String?>(
@@ -55,6 +64,19 @@ class _ScheduleChangeRequestScreenState
   String _selectedFilter = _requestFilters.first;
   final Set<int> _cancellingIds = <int>{};
 
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      unawaited(_refreshScheduleSnapshots());
+    });
+  }
+
   String? get _selectedApiStatus {
     switch (_selectedFilter.toLowerCase()) {
       case 'pending':
@@ -78,9 +100,23 @@ class _ScheduleChangeRequestScreenState
     );
   }
 
+  Future<void> _refreshScheduleSnapshots() async {
+    final semester = ref.read(selectedSemesterProvider);
+    ref.invalidate(scheduleProvider(semester));
+    ref.invalidate(dashboardProvider);
+
+    await Future.wait([
+      ref.read(scheduleProvider(semester).future),
+      ref.read(dashboardProvider.future),
+    ]);
+  }
+
   Future<void> _refresh() async {
     ref.invalidate(_scheduleChangeRequestsProvider(_selectedApiStatus));
-    await ref.read(_scheduleChangeRequestsProvider(_selectedApiStatus).future);
+    await Future.wait([
+      ref.read(_scheduleChangeRequestsProvider(_selectedApiStatus).future),
+      _refreshScheduleSnapshots(),
+    ]);
   }
 
   Future<void> _cancelRequest(Map<String, dynamic> request) async {
@@ -135,10 +171,15 @@ class _ScheduleChangeRequestScreenState
   }
 
   Future<void> _openNewRequestForm() async {
+    if (!mounted) {
+      return;
+    }
+
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const _NewScheduleRequestSheet(),
     );
@@ -163,19 +204,17 @@ class _ScheduleChangeRequestScreenState
     return Scaffold(
       appBar: AppBar(
         title: const Text('Schedule Change Requests'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: _refresh,
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-        ],
       ),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.sm,
+            AppSpacing.lg,
+            AppSpacing.xxl,
+          ),
           children: [
             _RequestSummaryBanner(
               selectedFilter: _selectedFilter,
@@ -184,14 +223,14 @@ class _ScheduleChangeRequestScreenState
                   .where((item) => _effectiveRequestStatus(item) == 'pending')
                   .length,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: _requestFilters
                     .map(
                       (filter) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.only(right: AppSpacing.sm),
                         child: ChoiceChip(
                           label: Text(filter),
                           selected: _selectedFilter == filter,
@@ -228,7 +267,7 @@ class _ScheduleChangeRequestScreenState
                     .toList(),
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: _kRequestCardPadding),
             requestsAsync.when(
               data: (items) {
                 if (items.isEmpty) {
@@ -239,7 +278,7 @@ class _ScheduleChangeRequestScreenState
                   children: items
                       .map(
                         (request) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
                           child: _RequestCard(
                             request: request,
                             isCancelling: _cancellingIds
@@ -252,7 +291,8 @@ class _ScheduleChangeRequestScreenState
                 );
               },
               loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 40),
+                padding: EdgeInsets.symmetric(
+                    vertical: _kRequestLargeLoadingPadding),
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (error, stackTrace) => _RequestsErrorState(
@@ -890,18 +930,18 @@ class _NewScheduleRequestSheetState
           top: false,
           child: Column(
             children: [
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Container(
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
                   color: const Color(0xFFE2E8F0),
-                  borderRadius: BorderRadius.circular(99),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -919,7 +959,7 @@ class _NewScheduleRequestSheetState
                               color: AppColors.textPrimary,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: _kRequestMicroGap),
                           Text(
                             _usePresetMode
                                 ? 'Using preset day pattern and time slot.'
@@ -933,7 +973,7 @@ class _NewScheduleRequestSheetState
                         ],
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: _kRequestCompactGap),
                     SizedBox(
                       height: 32,
                       child: OutlinedButton.icon(
@@ -954,14 +994,22 @@ class _NewScheduleRequestSheetState
                           style: const TextStyle(fontSize: 12),
                         ),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          minimumSize: const Size(0, 32),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: const VisualDensity(
+                            horizontal: -2,
+                            vertical: -2,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: _kRequestControlGap,
+                          ),
                           side: const BorderSide(
                             color: AppColors.cardPrimaryEnd,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppSpacing.xs),
                     SizedBox(
                       width: 32,
                       height: 32,
@@ -981,21 +1029,21 @@ class _NewScheduleRequestSheetState
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: _kRequestControlGap),
               Expanded(
                 child: SingleChildScrollView(
                   padding: EdgeInsets.fromLTRB(
-                    16,
-                    4,
-                    16,
-                    MediaQuery.of(context).viewInsets.bottom + 16,
+                    AppSpacing.lg,
+                    AppSpacing.xs,
+                    AppSpacing.lg,
+                    MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (schedulesAsync.isLoading || roomsAsync.isLoading)
                         const Padding(
-                          padding: EdgeInsets.only(bottom: 10),
+                          padding: EdgeInsets.only(bottom: _kRequestControlGap),
                           child: LinearProgressIndicator(minHeight: 2),
                         ),
                       if (schedulesAsync.hasError)
@@ -1044,7 +1092,7 @@ class _NewScheduleRequestSheetState
                       ),
                       if (selectedSchedule != null)
                         Padding(
-                          padding: const EdgeInsets.only(top: 8),
+                          padding: const EdgeInsets.only(top: AppSpacing.sm),
                           child: _InlineNotice(
                             message:
                                 'Current: ${selectedSchedule.subject.code} • ${selectedSchedule.dayPatternLabel} • ${selectedSchedule.startTime12h}-${selectedSchedule.endTime12h} • ${selectedSchedule.enrolledStudents} students',
@@ -1053,7 +1101,7 @@ class _NewScheduleRequestSheetState
                         ),
                       if (schedules.isEmpty)
                         const Padding(
-                          padding: EdgeInsets.only(top: 6),
+                          padding: EdgeInsets.only(top: _kRequestCompactGap),
                           child: Text(
                             'No schedules found. You need an assigned class before creating a request.',
                             style: TextStyle(
@@ -1063,17 +1111,19 @@ class _NewScheduleRequestSheetState
                             ),
                           ),
                         ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: _kRequestControlGap),
                       TextField(
                         controller: _sectionController,
                         decoration: const InputDecoration(
                           labelText: 'Section',
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: _kRequestControlGap),
                       if (roomOptions.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.only(
+                            bottom: _kRequestCompactGap,
+                          ),
                           child: Text(
                             requiredCapacity != null && requiredCapacity > 0
                                 ? '${roomOptions.length} room${roomOptions.length == 1 ? '' : 's'} can fit $requiredCapacity students'
@@ -1120,7 +1170,7 @@ class _NewScheduleRequestSheetState
                       ),
                       if (roomOptions.isEmpty)
                         const Padding(
-                          padding: EdgeInsets.only(top: 6),
+                          padding: EdgeInsets.only(top: _kRequestCompactGap),
                           child: Text(
                             'No available rooms for the current student count.',
                             style: TextStyle(
@@ -1130,7 +1180,7 @@ class _NewScheduleRequestSheetState
                             ),
                           ),
                         ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: _kRequestControlGap),
                       if (_usePresetMode) ...[
                         _SelectField<String>(
                           label: 'Day Pattern',
@@ -1152,7 +1202,7 @@ class _NewScheduleRequestSheetState
                             _scheduleLiveConflictCheck();
                           },
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: _kRequestControlGap),
                         _SelectField<String>(
                           label: 'Time Slot',
                           hint: 'Select time slot',
@@ -1183,10 +1233,10 @@ class _NewScheduleRequestSheetState
                             color: AppColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: _kRequestCompactGap),
                         Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
+                          spacing: _kRequestCompactGap,
+                          runSpacing: _kRequestCompactGap,
                           children: _dayOptions
                               .map(
                                 (dayOption) => FilterChip(
@@ -1215,7 +1265,9 @@ class _NewScheduleRequestSheetState
                                     fontWeight: FontWeight.w600,
                                   ),
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
+                                    horizontal: AppSpacing.sm,
+                                    vertical: AppSpacing.xs,
+                                  ),
                                   onSelected: (selected) =>
                                       _toggleDayCode(dayOption.code, selected),
                                   showCheckmark: false,
@@ -1223,7 +1275,7 @@ class _NewScheduleRequestSheetState
                               )
                               .toList(),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           'Selected: ${selectedDayLabels.isEmpty ? 'None' : selectedDayLabels.join(', ')}',
                           style: const TextStyle(
@@ -1234,7 +1286,8 @@ class _NewScheduleRequestSheetState
                         ),
                         if (selectedDayLabels.isNotEmpty)
                           Padding(
-                            padding: const EdgeInsets.only(top: 2),
+                            padding:
+                                const EdgeInsets.only(top: _kRequestMicroGap),
                             child: Text(
                               resolvedCustomPattern != null
                                   ? 'Resolved Pattern: $resolvedCustomPattern'
@@ -1249,7 +1302,7 @@ class _NewScheduleRequestSheetState
                               ),
                             ),
                           ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: _kRequestControlGap),
                         Row(
                           children: [
                             Expanded(
@@ -1259,7 +1312,7 @@ class _NewScheduleRequestSheetState
                                 onTap: () => _pickTime(_startTimeController),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: _TimeField(
                                 label: 'End Time',
@@ -1270,7 +1323,7 @@ class _NewScheduleRequestSheetState
                           ],
                         ),
                       ],
-                      const SizedBox(height: 10),
+                      const SizedBox(height: _kRequestControlGap),
                       TextField(
                         controller: _enrolledStudentsController,
                         keyboardType: TextInputType.number,
@@ -1281,7 +1334,7 @@ class _NewScheduleRequestSheetState
                         decoration: const InputDecoration(
                             labelText: 'Enrolled Students'),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: _kRequestControlGap),
                       if (_isCheckingConflicts)
                         const _InlineNotice(
                           message: 'Checking conflicts for selected schedule…',
@@ -1302,12 +1355,14 @@ class _NewScheduleRequestSheetState
                             color: AppColors.error,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.sm),
                         Column(
                           children: _liveConflicts
                               .map(
                                 (conflict) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
+                                  padding: const EdgeInsets.only(
+                                    bottom: AppSpacing.sm,
+                                  ),
                                   child: ConflictDetailCard(conflict: conflict),
                                 ),
                               )
@@ -1319,7 +1374,7 @@ class _NewScheduleRequestSheetState
                               'No conflicts detected for the selected day, time, and room.',
                           color: AppColors.success,
                         ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: _kRequestControlGap),
                       TextField(
                         controller: _reasonController,
                         minLines: 2,
@@ -1336,7 +1391,12 @@ class _NewScheduleRequestSheetState
               ),
               if (isNoEffectiveChange)
                 const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    0,
+                    AppSpacing.lg,
+                    _kRequestControlGap,
+                  ),
                   child: _InlineNotice(
                     message:
                         'No changes detected from the current schedule. Please update day pattern, time, or room to submit.',
@@ -1344,7 +1404,12 @@ class _NewScheduleRequestSheetState
                   ),
                 ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  _kRequestControlGap,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -1362,7 +1427,7 @@ class _NewScheduleRequestSheetState
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: _kRequestControlGap),
                     Expanded(
                       child: SizedBox(
                         height: 44,
@@ -2103,8 +2168,11 @@ class _InlineNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: _kRequestControlGap,
+        vertical: _kRequestCompactGap,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(8),
@@ -2138,7 +2206,7 @@ class _RequestSummaryBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(_kRequestCardPadding),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: const LinearGradient(
@@ -2166,7 +2234,7 @@ class _RequestSummaryBanner extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             'Filter: $selectedFilter',
             style: const TextStyle(
@@ -2175,10 +2243,10 @@ class _RequestSummaryBanner extends StatelessWidget {
               fontSize: 11,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: _kRequestControlGap),
           Wrap(
-            spacing: 6,
-            runSpacing: 6,
+            spacing: _kRequestCompactGap,
+            runSpacing: _kRequestCompactGap,
             children: [
               _BannerPill(
                 icon: Icons.assignment_outlined,
@@ -2205,16 +2273,19 @@ class _BannerPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: _kRequestBadgeVerticalPadding,
+      ),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(99),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
         color: Colors.white.withValues(alpha: 0.16),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 12, color: Colors.white),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSpacing.xs),
           Text(
             text,
             style: const TextStyle(
@@ -2273,7 +2344,7 @@ class _RequestCard extends StatelessWidget {
     final canCancel = status == 'pending';
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
         borderRadius: BorderRadius.circular(14),
@@ -2298,7 +2369,7 @@ class _RequestCard extends StatelessWidget {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: _kRequestMicroGap),
                     Text(
                       subjectTitle,
                       style: const TextStyle(
@@ -2311,7 +2382,10 @@ class _RequestCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
+                ),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(8),
@@ -2328,17 +2402,17 @@ class _RequestCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: _kRequestControlGap),
           Wrap(
-            spacing: 6,
-            runSpacing: 6,
+            spacing: _kRequestCompactGap,
+            runSpacing: _kRequestCompactGap,
             children: [
               _MetaTag(icon: Icons.schedule_rounded, text: timeRange),
               _MetaTag(icon: Icons.event_note_outlined, text: dayPattern),
               _MetaTag(icon: Icons.location_on_outlined, text: roomCode),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             reason,
             style: const TextStyle(
@@ -2347,10 +2421,10 @@ class _RequestCard extends StatelessWidget {
               color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Wrap(
-            spacing: 6,
-            runSpacing: 6,
+            spacing: _kRequestCompactGap,
+            runSpacing: _kRequestCompactGap,
             children: [
               _ApprovalTag(
                 label: 'Admin: ${_titleCase(adminStatus)}',
@@ -2363,7 +2437,7 @@ class _RequestCard extends StatelessWidget {
             ],
           ),
           if (canCancel) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: _kRequestControlGap),
             SizedBox(
               height: 36,
               child: OutlinedButton.icon(
@@ -2382,7 +2456,9 @@ class _RequestCard extends StatelessWidget {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.error,
                   side: const BorderSide(color: Color(0xFFFECACA)),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
                 ),
               ),
             ),
@@ -2402,7 +2478,10 @@ class _MetaTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: AppColors.cardChipSurface,
         borderRadius: BorderRadius.circular(8),
@@ -2412,7 +2491,7 @@ class _MetaTag extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 12, color: AppColors.textSecondary),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSpacing.xs),
           Text(
             text,
             style: const TextStyle(
@@ -2436,7 +2515,10 @@ class _ApprovalTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(6),
@@ -2461,7 +2543,10 @@ class _RequestsEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xxl,
+      ),
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
         borderRadius: BorderRadius.circular(14),
@@ -2474,7 +2559,7 @@ class _RequestsEmptyState extends StatelessWidget {
             size: 32,
             color: AppColors.textSecondary,
           ),
-          SizedBox(height: 8),
+          SizedBox(height: AppSpacing.sm),
           Text(
             'No schedule change requests',
             style: TextStyle(
@@ -2484,7 +2569,7 @@ class _RequestsEmptyState extends StatelessWidget {
               color: AppColors.textPrimary,
             ),
           ),
-          SizedBox(height: 4),
+          SizedBox(height: AppSpacing.xs),
           Text(
             'Requests will appear here when submitted.',
             textAlign: TextAlign.center,
@@ -2513,7 +2598,10 @@ class _RequestsErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 22),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: _kRequestErrorVerticalPadding,
+      ),
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
         borderRadius: BorderRadius.circular(14),
@@ -2522,7 +2610,7 @@ class _RequestsErrorState extends StatelessWidget {
       child: Column(
         children: [
           const Icon(Icons.error_outline, size: 30, color: AppColors.error),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           const Text(
             'Unable to load requests',
             style: TextStyle(
@@ -2532,7 +2620,7 @@ class _RequestsErrorState extends StatelessWidget {
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             message,
             textAlign: TextAlign.center,
@@ -2542,7 +2630,7 @@ class _RequestsErrorState extends StatelessWidget {
               color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: _kRequestControlGap),
           SizedBox(
             height: 36,
             child: FilledButton.icon(

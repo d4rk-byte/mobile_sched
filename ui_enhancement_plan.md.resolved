@@ -1,0 +1,442 @@
+# 🎨 UI Enhancement Plan — "Quiet Elegance"
+
+> **Theme:** Simple, elegant, and aesthetic — like a calm, well-organized notebook  
+> **Philosophy:** Let content breathe. Every element earns its space. Color is used with intention, not decoration.
+
+---
+
+## Design Direction
+
+````carousel
+![Dashboard direction — gradient hero, stat grid, timeline cards](C:\Users\HVergara\.gemini\antigravity\brain\f75d589f-f84b-4e07-8587-9c7e1283e593\artifacts\dashboard_direction.png)
+<!-- slide -->
+![Profile and navigation direction — clean info sections, refined nav](C:\Users\HVergara\.gemini\antigravity\brain\f75d589f-f84b-4e07-8587-9c7e1283e593\artifacts\profile_nav_direction.png)
+````
+
+---
+
+## 1. Design Principles
+
+| Principle | What it means |
+|---|---|
+| **Breathability** | Generous whitespace between sections. No cramped layouts. Content feels open and calm. |
+| **Soft depth** | Very subtle shadows (low blur, low opacity). Cards float gently, never pop aggressively. |
+| **Restrained color** | One accent gradient for hero cards. Everything else is neutral with tinted pastels for status/icons. |
+| **Consistent rhythm** | Same spacing, same radius, same padding everywhere. Visual consistency = perceived quality. |
+| **Purposeful motion** | Subtle transitions (fade, slide-up) on page load and state changes. Nothing bouncy or playful. |
+
+---
+
+## 2. Color Palette Refinement
+
+### Current → Proposed changes
+
+Your existing palette in `theme.dart` is already quite good. The refinements are minor and focused on warmth and elegance:
+
+```diff
+ // Core accent palette — KEEP (already elegant)
+ static const Color primaryColor = Color(0xFF465FFF);
+ static const Color primaryDark = Color(0xFF3448D9);
+ static const Color primaryLight = Color(0xFF9CB0FF);
+
+ // Card gradient — KEEP (signature look)
+ static const Color cardPrimaryStart = Color(0xFF1D4ED8);
+ static const Color cardPrimaryEnd = Color(0xFF465FFF);
+
+-// Surfaces and backgrounds
+-static const Color backgroundColor = Color(0xFFF4F7FC);
++// Surfaces and backgrounds — slightly warmer for elegance
++static const Color backgroundColor = Color(0xFFF5F7FA);
+ 
+-static const Color cardSurface = Color(0xFFF7F9FF);
++static const Color cardSurface = Color(0xFFFFFFFF);  // Pure white cards
+
++// NEW: Elevated surface for active/hover states
++static const Color cardSurfaceElevated = Color(0xFFF8FAFF);
+
+-static const Color cardBorder = Color(0xFFDDE5FF);
++static const Color cardBorder = Color(0xFFE8ECF4);  // Softer, less blue
+
++// NEW: Skeleton/shimmer colors
++static const Color shimmerBase = Color(0xFFEEF1F6);
++static const Color shimmerHighlight = Color(0xFFF8FAFC);
+```
+
+### Additions needed
+
+| Token | Value | Purpose |
+|---|---|---|
+| `surfaceOverlay` | `Color(0x0A465FFF)` | Very faint blue tint for hover/pressed states |
+| `cardShadow` | `Color(0x0A111827)` | Shadow color (4% black) — softer than current |
+| `borderSubtle` | `Color(0xFFF0F2F5)` | Even lighter border for info sections |
+
+> [!TIP]
+> The key shift: Move cards from `#F7F9FF` (blueish tint) to **pure white** `#FFFFFF`. This creates a cleaner contrast against the `#F5F7FA` background and looks much more premium on-device.
+
+---
+
+## 3. Typography Adjustments
+
+Your `Outfit` font + text theme is solid. Small refinements for elegance:
+
+| Level | Current | Proposed | Why |
+|---|---|---|---|
+| `headlineLarge` | `32px, -0.6 ls` | `30px, -0.5 ls` | Slightly less dramatic for mobile |
+| `titleLarge` | `20px` | `19px` | One notch down — feels more refined |
+| `bodySmall` | `12px` | `12.5px` | Slightly more readable, especially for metadata |
+| `labelMedium` | `12px, w500` | `11.5px, w600` | Tighter, bolder labels for pills/chips |
+
+> [!NOTE]
+> These are subtle (half-pixel) adjustments. The biggest impact comes from **letter-spacing**: add `letterSpacing: 0.1` to `labelMedium` and `labelLarge` for chip/pill text. It opens up small text beautifully.
+
+---
+
+## 4. Spacing & Radius
+
+### Spacing — Add a breathing tier
+
+```diff
+ class AppSpacing {
+   static const double xs = 4;
+   static const double sm = 8;
+   static const double md = 12;
+   static const double lg = 16;
+   static const double xl = 20;
+   static const double xxl = 24;
+   static const double xxxl = 32;
++  static const double section = 28;  // Between major sections
++  static const double page = 20;     // Page horizontal padding
+ }
+```
+
+### Radius — Slightly rounder
+
+```diff
+ class AppRadius {
+-  static const double sm = 10;
+-  static const double md = 12;
+-  static const double lg = 16;
+-  static const double xl = 20;
++  static const double sm = 12;
++  static const double md = 14;
++  static const double lg = 18;
++  static const double xl = 22;
++  static const double pill = 999;  // Named constant for pill shapes
+ }
+```
+
+> [!TIP]
+> Slightly rounder corners give a softer, more modern feel — the difference between "functional" and "crafted."
+
+---
+
+## 5. Shadow System
+
+Replace scattered `BoxShadow` definitions with a unified elevation system:
+
+```dart
+class AppShadow {
+  /// Cards resting on the surface (default state)
+  static const List<BoxShadow> card = [
+    BoxShadow(
+      color: Color(0x08111827),
+      blurRadius: 8,
+      offset: Offset(0, 2),
+    ),
+  ];
+
+  /// Cards on hover/pressed or elevated panels
+  static const List<BoxShadow> cardElevated = [
+    BoxShadow(
+      color: Color(0x0C111827),
+      blurRadius: 16,
+      offset: Offset(0, 4),
+    ),
+  ];
+
+  /// Hero/gradient cards — colored shadow
+  static List<BoxShadow> hero(Color baseColor) => [
+    BoxShadow(
+      color: baseColor.withOpacity(0.18),
+      blurRadius: 24,
+      offset: const Offset(0, 10),
+    ),
+  ];
+
+  /// Bottom sheets & modals
+  static const List<BoxShadow> sheet = [
+    BoxShadow(
+      color: Color(0x14111827),
+      blurRadius: 32,
+      offset: Offset(0, -8),
+    ),
+  ];
+}
+```
+
+---
+
+## 6. Screen-by-Screen Enhancements
+
+### 6.1 Dashboard Screen
+
+```mermaid
+graph TB
+    subgraph Current
+        A["Hero Banner<br/>✅ Good gradient"]
+        B["Stats Grid 2x2<br/>⚠️ Flat, no shadow"]
+        C["Today's Schedule Cards<br/>⚠️ Dense metadata text"]
+    end
+    
+    subgraph Enhanced
+        D["Hero Banner<br/>+ softer shadow<br/>+ animated greeting"]
+        E["Stats Grid 2x2<br/>+ white bg + soft shadow<br/>+ icon bg circles"]
+        F["Schedule Timeline<br/>+ left accent line<br/>+ cleaner metadata chips"]
+    end
+    
+    A --> D
+    B --> E
+    C --> F
+```
+
+#### Changes:
+
+| Component | Enhancement | Effort |
+|---|---|---|
+| **Hero Banner** | Add subtle entrance animation (fade + slide up 8px over 300ms). Reduce shadow blur from 20→24, opacity from 0.22→0.18. | Small |
+| **Insight Cards** | Change from `cardSurface` background to pure `white`. Add `AppShadow.card` instead of border-only. Add a soft color wash behind the icon circle (currently `14% opacity` → make it `10%` with a slightly larger circle `42×42`). | Small |
+| **Schedule Cards** | Add a **3px left accent border** colored by status (green/blue/gray). This immediately communicates status without reading text. Remove the dense metadata string and replace with individual **metadata chips** (like the schedule screen already does). | Medium |
+| **Empty State** | Use a softer illustration-style icon. Add a gentle pulse animation to the icon. | Small |
+| **Section Headers** | Add a subtle fade-in stagger when content loads (each card appears 40ms after the previous). | Small |
+
+#### Dashboard Schedule Card — Before vs After:
+
+```diff
+ // BEFORE: Dense metadata string
+-Text(
+-  '${schedule.dayPatternLabel} | Room ${schedule.room.code}... | Section...',
+-  maxLines: 2, ...
+-)
+ 
+ // AFTER: Clean metadata chips + left accent border
++Container(
++  decoration: BoxDecoration(
++    color: Colors.white,
++    borderRadius: BorderRadius.circular(AppRadius.lg),
++    border: Border(
++      left: BorderSide(
++        color: _getStatusColor(timeStatus),
++        width: 3.5,
++      ),
++    ),
++    boxShadow: AppShadow.card,
++  ),
++  child: Row(
++    children: [
++      // Time column
++      // Content with individual chips for room, day, section
++    ],
++  ),
++)
+```
+
+---
+
+### 6.2 Schedule Screen
+
+| Component | Enhancement | Effort |
+|---|---|---|
+| **Overview Card** | Already good. Just update shadow to `AppShadow.hero()`. | Tiny |
+| **Schedule Cards** | Add the same **left accent bar** as dashboard (using the app primary color). Increase card padding from 14→16. | Small |
+| **Meta Chips** | Remove the inner border on chips (currently `Border.all(color: AppColors.cardBorder)`) — border + background is redundant. Just keep the tinted background. | Tiny |
+| **Semester Selector** | If there's a dropdown, style it with a subtle pill shape and the accent color. | Small |
+
+---
+
+### 6.3 Notifications Screen
+
+| Component | Enhancement | Effort |
+|---|---|---|
+| **Unread Cards** | The current colored border + shadow for unread is good. Refine: increase border radius to match `AppRadius.lg`, reduce shadow opacity. | Tiny |
+| **Read Cards** | Add very subtle `AppShadow.card` instead of border-only. This creates a floating-card feel. | Tiny |
+| **Detail Bottom Sheet** | Add a frosted backdrop (`BackdropFilter` with very light `ImageFilter.blur(sigmaX: 3, sigmaY: 3)`) for the sheet overlay. | Small |
+| **Timestamp** | Use relative time ("2 hours ago", "Yesterday") instead of absolute date for a friendlier feel. | Small |
+| **Type Icons** | Slightly enlarge the icon container from 36→40px. Add a soft ring border to the icon circle. | Tiny |
+
+---
+
+### 6.4 Profile Screen
+
+| Component | Enhancement | Effort |
+|---|---|---|
+| **Header Card** | Already excellent. Minor: increase avatar from 62→68px, add a subtle white ring shadow. | Tiny |
+| **Info Sections** | Switch to pure white background with `AppShadow.card`. Remove border. Add a subtle divider line between rows instead of spacing alone. | Small |
+| **Action Buttons** | Current side-by-side outlines are good. Add a gentle icon scale animation on tap. | Tiny |
+| **Sign Out Button** | Keep red outline. Add a subtle shaking animation on the icon when hovered/focused (accessibility). | Tiny |
+| **Completion Card** | Add a thin progress bar showing completion % (e.g., "5/7 fields complete") instead of just "complete / not complete." | Medium |
+
+---
+
+### 6.5 Auth Screens (Sign In / Welcome)
+
+| Component | Enhancement | Effort |
+|---|---|---|
+| **Welcome Page** | Already well-designed with stagger animations. Keep as-is. | None |
+| **Sign In Page** | Already has `AuthStaggeredEntrance`. Refine: soften the social button borders, increase spacing between the OR divider. | Tiny |
+| **Login Screen (legacy)** | ⚠️ **Remove entirely** — it uses a green color scheme and `GoogleFonts.poppins()` that don't match. Redirect to `SignInPage`. | Medium |
+| **Register Page** | Ensure it matches the `auth_constants.dart` design tokens consistently. | Small |
+
+---
+
+### 6.6 Bottom Navigation Bar
+
+| Enhancement | Details |
+|---|---|
+| **Add subtle top border** | `Border(top: BorderSide(color: AppColors.borderSubtle))` instead of elevation shadow |
+| **Selected indicator** | Add a small dot (4×4px) or short line below the selected icon instead of just color change |
+| **Badge animation** | Add a gentle scale-in animation when the badge count changes |
+| **Elevation** | Remove any elevation. Use the top border for separation. |
+
+```diff
+ bottomNavigationBar: BottomNavigationBar(
++  elevation: 0,
+   ...
+ ),
++// Wrap in a Container with top border:
++Container(
++  decoration: const BoxDecoration(
++    color: AppColors.whiteColor,
++    border: Border(
++      top: BorderSide(color: Color(0xFFF0F2F5), width: 1),
++    ),
++  ),
++  child: BottomNavigationBar(...),
++)
+```
+
+---
+
+### 6.7 Loading / Splash Screen
+
+The `AppOpeningLoadingScreen` already has a beautiful heartbeat animation. Enhancements:
+
+| Enhancement | Details |
+|---|---|
+| **Loading bar** | Add a subtle shimmer effect to the white loading bar |
+| **Background** | Add very faint floating particles/orbs (2-3 semi-transparent circles with slow drift animation) for depth |
+| **Text** | "Starting up..." could cycle through messages: "Loading your schedule...", "Almost ready..." |
+
+---
+
+## 7. Shared Component Library
+
+Create a set of reusable "elegant" primitives in `lib/widgets/`:
+
+### 7.1 `elegant_card.dart`
+```dart
+/// A white card with soft shadow, consistent padding, and optional left accent.
+class ElegantCard extends StatelessWidget {
+  final Widget child;
+  final Color? accentColor;    // Left border accent
+  final EdgeInsets? padding;
+  final VoidCallback? onTap;
+
+  // Uses AppShadow.card, white bg, AppRadius.lg
+}
+```
+
+### 7.2 `section_header.dart`
+```dart
+/// A section title with optional trailing count badge.
+class SectionHeader extends StatelessWidget {
+  final String title;
+  final int? count;
+  final String? countLabel;  // e.g., "items", "classes"
+}
+```
+
+### 7.3 `metadata_chip.dart`
+```dart
+/// A small icon+text chip for schedule/card metadata.
+class MetadataChip extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final Color? color;
+  // Replaces _ScheduleMetaChip, _HeroPill, _OverviewPill, _NotificationPill
+}
+```
+
+### 7.4 `status_pill.dart`
+```dart
+/// A status indicator pill with background tint.
+class StatusPill extends StatelessWidget {
+  final String label;
+  final Color color;
+  // Replaces multiple inline status badge implementations
+}
+```
+
+### 7.5 `shimmer_skeleton.dart`
+```dart
+/// A premium shimmer loading skeleton.
+class ShimmerSkeleton extends StatelessWidget {
+  final double width;
+  final double height;
+  final double borderRadius;
+  // Uses shimmerBase/shimmerHighlight colors with animated gradient
+}
+```
+
+---
+
+## 8. Animation Plan
+
+| Animation | Where | Duration | Curve |
+|---|---|---|---|
+| **Page content stagger** | All screens | 40ms delay per item | `easeOutCubic` |
+| **Card fade-in** | Dashboard, Schedule, Notifications | 260ms | `easeOutCubic` |
+| **Status pill scale-in** | Dashboard schedule cards | 180ms | `easeOutBack` |
+| **Bottom nav dot** | Selected tab indicator | 200ms | `easeInOutCubic` |
+| **Badge bounce** | Notification count change | 300ms | `elasticOut` |
+| **Pull-to-refresh** | All data screens | System default | System default |
+| **Sheet backdrop** | Notification detail | 260ms | `easeOut` |
+| **Hero banner parallax** | Dashboard scroll | Continuous | Linear |
+
+> [!IMPORTANT]
+> All animations should respect `MediaQuery.disableAnimations`. The app already does this in the loading screen — extend to all new animations.
+
+---
+
+## 9. Implementation Order
+
+| Phase | Task | Files Affected | Estimated Effort |
+|---|---|---|---|
+| **Phase 1: Foundation** | Update `AppColors`, `AppSpacing`, `AppRadius` tokens + add `AppShadow` class | [theme.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/app/configs/theme.dart) | 30 min |
+| **Phase 2: Cards** | Create `ElegantCard`, `MetadataChip`, `StatusPill`, `SectionHeader` | `lib/widgets/` (new files) | 1 hr |
+| **Phase 3: Dashboard** | Refactor `_InsightCard`, `_DashboardScheduleCard`, `_HeroBanner` to use new components | [dashboard_screen.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/screens/dashboard_screen.dart) | 1.5 hr |
+| **Phase 4: Schedule** | Refactor `_ScheduleCard`, `_ScheduleMetaChip` to use shared components | [schedule_screen.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/screens/schedule_screen.dart) | 1 hr |
+| **Phase 5: Notifications** | Refactor `_NotificationCard`, add backdrop blur to detail sheet | [notifications_screen.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/screens/notifications_screen.dart) | 45 min |
+| **Phase 6: Profile** | Refactor info sections, add completion progress bar | [profile_screen.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/screens/profile_screen.dart) | 45 min |
+| **Phase 7: Bottom Nav** | Add top border, selected dot indicator, badge animation | [main.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/main.dart) | 30 min |
+| **Phase 8: Auth Cleanup** | Remove `login_screen.dart`, ensure `SignInPage` is the only login | [login_screen.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/screens/login_screen.dart), [main.dart](file:///c:/Users/HVergara/scheduling_mobile/lib/main.dart) | 30 min |
+| **Phase 9: Animations** | Add page stagger, card fade-in, status pill scale-in | All screens | 1 hr |
+| **Phase 10: Polish** | Shimmer skeletons for loading states, final spacing audit | All screens + `lib/widgets/` | 1 hr |
+
+> **Total estimated time: ~8 hours** across 10 phases
+
+---
+
+## 10. What NOT to Change
+
+These elements are already well-designed and should be preserved:
+
+- ✅ **Hero gradient cards** — the blue gradient is the app's signature
+- ✅ **Outfit font** — excellent choice, bundled properly
+- ✅ **Auth stagger animations** — `AuthStaggeredEntrance` is polished
+- ✅ **Splash screen heartbeat** — unique and well-executed
+- ✅ **Material 3 theming** — already enabled and well-configured
+- ✅ **InkSparkle** splash factory — premium touch feedback
+
+---
+
+> **Ready to start Phase 1?** I can begin updating the design tokens in `theme.dart` and creating the shared component library right away.

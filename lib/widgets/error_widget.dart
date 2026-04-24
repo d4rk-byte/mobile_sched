@@ -15,6 +15,8 @@ class ErrorDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -22,19 +24,18 @@ class ErrorDisplay extends StatelessWidget {
           const Icon(
             Icons.error_outline,
             size: 48,
-            color: Colors.red,
+            color: AppColors.error,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: textTheme.bodyLarge?.copyWith(
               color: AppColors.textSecondary,
-              fontSize: 14,
             ),
           ),
           if (onRetry != null) ...[
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
             ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),

@@ -16,32 +16,33 @@ class ScheduleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Card(
       color: AppColors.cardSurface,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         side: const BorderSide(color: AppColors.cardBorder),
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
+        contentPadding: const EdgeInsets.all(AppSpacing.lg),
         onTap: onTap,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               schedule.subject.code,
-              style: const TextStyle(
-                fontSize: 14,
+              style: textTheme.titleMedium?.copyWith(
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xs),
             Text(
               schedule.subject.title,
-              style: const TextStyle(
-                fontSize: 13,
+              style: textTheme.bodyMedium?.copyWith(
                 color: AppColors.textSecondary,
               ),
               maxLines: 2,
@@ -52,22 +53,24 @@ class ScheduleTile extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
-                const Icon(Icons.access_time,
-                    size: 14, color: Color(0xFF3B82F6)),
-                const SizedBox(width: 6),
+                const Icon(
+                  Icons.access_time,
+                  size: 14,
+                  color: AppColors.cardPrimaryEnd,
+                ),
+                const SizedBox(width: AppSpacing.sm),
                 Text(
                   '${schedule.startTime12h} - ${schedule.endTime12h}',
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondary,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xs),
             Row(
               children: [
                 const Icon(
@@ -75,25 +78,23 @@ class ScheduleTile extends StatelessWidget {
                   size: 14,
                   color: AppColors.cardPrimaryEnd,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSpacing.sm),
                 Text(
                   schedule.room.code,
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondary,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xs),
             Row(
               children: [
-                const Icon(Icons.people, size: 14, color: Color(0xFFF59E0B)),
-                const SizedBox(width: 6),
+                const Icon(Icons.people, size: 14, color: AppColors.warning),
+                const SizedBox(width: AppSpacing.sm),
                 Text(
                   '${schedule.enrolledStudents} students',
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondary,
                   ),
                 ),

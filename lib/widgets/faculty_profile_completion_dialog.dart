@@ -43,6 +43,8 @@ class _FacultyProfileCompletionDialogState
   String? _selectedPosition;
 
   static const String _positionPlaceholder = '-- Select Position --';
+  static const Color _dropdownValueColor = Color(0xFF111827);
+  static const Color _dropdownHintColor = Color(0xFF667085);
   static const List<String> _positionOptions = [
     'Full-time',
     'Part-time',
@@ -57,6 +59,42 @@ class _FacultyProfileCompletionDialogState
     super.initState();
     _prefillFromCurrentUser();
     _loadColleges();
+  }
+
+  TextStyle _dropdownValueStyle(BuildContext context) {
+    final baseStyle = Theme.of(context).textTheme.bodyMedium ??
+        const TextStyle(fontSize: 13, fontWeight: FontWeight.w500);
+
+    return baseStyle.copyWith(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: _dropdownValueColor,
+    );
+  }
+
+  TextStyle _dropdownHintStyle(BuildContext context) {
+    final baseStyle = Theme.of(context).textTheme.bodyMedium ??
+        const TextStyle(fontSize: 13, fontWeight: FontWeight.w500);
+
+    return baseStyle.copyWith(
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+      color: _dropdownHintColor,
+    );
+  }
+
+  Widget _buildDropdownText(
+    BuildContext context,
+    String value, {
+    bool isHint = false,
+  }) {
+    return Text(
+      value,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style:
+          isHint ? _dropdownHintStyle(context) : _dropdownValueStyle(context),
+    );
   }
 
   @override
@@ -367,7 +405,7 @@ class _FacultyProfileCompletionDialogState
       return false;
     });
 
-    await ref.read(authProvider.notifier).updateProfile(payload);
+    await ref.read(authProvider.notifier).completeProfile(payload);
 
     if (!mounted) {
       return;
@@ -484,10 +522,16 @@ class _FacultyProfileCompletionDialogState
     if (_colleges.isEmpty) {
       return DropdownButtonFormField<int>(
         initialValue: null,
+        isExpanded: true,
+        style: _dropdownValueStyle(context),
         decoration: const InputDecoration(labelText: 'College'),
-        items: const [
+        items: [
           DropdownMenuItem<int>(
-            child: Text('No colleges available'),
+            child: _buildDropdownText(
+              context,
+              'No colleges available',
+              isHint: true,
+            ),
           ),
         ],
         onChanged: null,
@@ -496,13 +540,15 @@ class _FacultyProfileCompletionDialogState
 
     return DropdownButtonFormField<int>(
       initialValue: _selectedCollegeId,
-      hint: const Text('Select a college'),
+      isExpanded: true,
+      style: _dropdownValueStyle(context),
+      hint: _buildDropdownText(context, 'Select a college', isHint: true),
       decoration: const InputDecoration(labelText: 'College'),
       items: _colleges
           .map(
             (college) => DropdownMenuItem<int>(
               value: college.id,
-              child: Text(college.label),
+              child: _buildDropdownText(context, college.label),
             ),
           )
           .toList(),
@@ -523,10 +569,16 @@ class _FacultyProfileCompletionDialogState
     if (_selectedCollegeId == null) {
       return DropdownButtonFormField<int>(
         initialValue: null,
+        isExpanded: true,
+        style: _dropdownValueStyle(context),
         decoration: const InputDecoration(labelText: 'Department'),
-        items: const [
+        items: [
           DropdownMenuItem<int>(
-            child: Text('Select a college first'),
+            child: _buildDropdownText(
+              context,
+              'Select a college first',
+              isHint: true,
+            ),
           ),
         ],
         onChanged: null,
@@ -540,10 +592,16 @@ class _FacultyProfileCompletionDialogState
     if (_departments.isEmpty) {
       return DropdownButtonFormField<int>(
         initialValue: null,
+        isExpanded: true,
+        style: _dropdownValueStyle(context),
         decoration: const InputDecoration(labelText: 'Department'),
-        items: const [
+        items: [
           DropdownMenuItem<int>(
-            child: Text('No departments available for selected college'),
+            child: _buildDropdownText(
+              context,
+              'No departments available for selected college',
+              isHint: true,
+            ),
           ),
         ],
         onChanged: null,
@@ -552,13 +610,15 @@ class _FacultyProfileCompletionDialogState
 
     return DropdownButtonFormField<int>(
       initialValue: _selectedDepartmentId,
-      hint: const Text('Select a department'),
+      isExpanded: true,
+      style: _dropdownValueStyle(context),
+      hint: _buildDropdownText(context, 'Select a department', isHint: true),
       decoration: const InputDecoration(labelText: 'Department'),
       items: _departments
           .map(
             (department) => DropdownMenuItem<int>(
               value: department.id,
-              child: Text(department.label),
+              child: _buildDropdownText(context, department.label),
             ),
           )
           .toList(),
@@ -611,16 +671,22 @@ class _FacultyProfileCompletionDialogState
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: _selectedPosition ?? '',
+                  isExpanded: true,
+                  style: _dropdownValueStyle(context),
                   decoration: const InputDecoration(labelText: 'Position'),
                   items: [
-                    const DropdownMenuItem<String>(
+                    DropdownMenuItem<String>(
                       value: '',
-                      child: Text(_positionPlaceholder),
+                      child: _buildDropdownText(
+                        context,
+                        _positionPlaceholder,
+                        isHint: true,
+                      ),
                     ),
                     ..._positionOptions.map(
                       (position) => DropdownMenuItem<String>(
                         value: position,
-                        child: Text(position),
+                        child: _buildDropdownText(context, position),
                       ),
                     ),
                   ],

@@ -92,15 +92,20 @@ class ClassNotificationService {
       final subjectTitle = schedule.subject.title;
       final roomCode = schedule.room.code;
       final roomName = schedule.room.name;
+      final section = schedule.section?.trim();
+      final sectionLabel =
+          section != null && section.isNotEmpty ? 'Section $section • ' : '';
       final roomDisplay = roomName != null ? '$roomCode ($roomName)' : roomCode;
+      final notificationBody =
+          '$subjectCode - $subjectTitle\n${sectionLabel}Room $roomDisplay';
 
       // Schedule "5 minutes before" notification
       final fiveMinBefore = startTime.subtract(const Duration(minutes: 5));
       if (fiveMinBefore.isAfter(now)) {
         await _scheduleNotification(
           id: schedule.id * 2, // Unique ID for 5-min reminder
-          title: '⏰ Class in 5 minutes',
-          body: '$subjectCode - $subjectTitle\nRoom $roomDisplay',
+          title: 'Class in 5 minutes',
+          body: notificationBody,
           scheduledTime: fiveMinBefore,
         );
       }
@@ -109,8 +114,8 @@ class ClassNotificationService {
       if (startTime.isAfter(now)) {
         await _scheduleNotification(
           id: schedule.id * 2 + 1, // Unique ID for start-time reminder
-          title: '🔔 Class Starting Now',
-          body: '$subjectCode - $subjectTitle\nRoom $roomDisplay',
+          title: 'Class Starting Now',
+          body: notificationBody,
           scheduledTime: startTime,
         );
       }
@@ -202,7 +207,7 @@ class ClassNotificationService {
 
     await _notifications.show(
       id: 0,
-      title: '🔔 Notifications Enabled',
+      title: 'Notifications Enabled',
       body: 'You will receive reminders for your classes.',
       notificationDetails: details,
     );

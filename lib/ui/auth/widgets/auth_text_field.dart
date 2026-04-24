@@ -16,16 +16,18 @@ class AuthTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: kAuthCompactSpacing),
       child: TextField(
         controller: controller,
-        style: kAuthBodyText.copyWith(color: const Color(0xFF1D2939)),
+        style: kAuthBodyText.copyWith(color: kAuthLabelColor),
         cursorColor: kAuthPrimaryButtonColor,
         keyboardType: inputType,
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: kAuthSectionSpacing,
+            vertical: kAuthElementSpacing,
+          ),
           hintText: hintText,
           hintStyle: kAuthBodyText.copyWith(color: kAuthInputHintColor),
           filled: true,
@@ -33,14 +35,14 @@ class AuthTextField extends StatelessWidget {
           enabledBorder: OutlineInputBorder(
             borderSide:
                 const BorderSide(color: kAuthInputBorderColor, width: 1),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(kAuthFieldRadius),
           ),
           focusedBorder: OutlineInputBorder(
             borderSide: const BorderSide(
               color: kAuthInputFocusedBorderColor,
-              width: 1.2,
+              width: 1.4,
             ),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(kAuthFieldRadius),
           ),
         ),
       ),

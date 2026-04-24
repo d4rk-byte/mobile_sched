@@ -1,72 +1,56 @@
 name: scheduling_mobile
-description: Faculty Dashboard Mobile App for Full Scheduling System
+description: "Smart Scheduling System - Mobile App for NORSU"
 publish_to: 'none'
 
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: ^3.11.0
 
 dependencies:
   flutter:
     sdk: flutter
-  
-  # HTTP & Networking
-  http: ^1.1.0
-  dio: ^5.3.0
-  
+
+  cupertino_icons: ^1.0.8
+
   # State Management
-  riverpod: ^2.4.0
-  flutter_riverpod: ^2.4.0
-  
-  # Local Storage
-  shared_preferences: ^2.2.0
-  sqflite: ^2.3.0
-  
-  # UI/UX
-  flutter_svg: ^2.0.0
+  provider: ^6.1.2
+  flutter_riverpod: ^2.6.1
+
+  # HTTP & Networking
+  http: ^1.2.1
+
+  # Secure Storage (for tokens)
+  flutter_secure_storage: ^9.2.2
+
+  # Utilities
   intl: ^0.19.0
-  google_fonts: ^6.0.0
-  
-  # Authentication & JWT
-  jwt_decoder: ^2.0.1
-  
-  # Notifications
-  flutter_local_notifications: ^21.0.0
-  timezone: ^0.11.0
-  
-  # Secure Storage
-  flutter_secure_storage: ^9.0.0
-  
-  # Logging
-  logger: ^2.0.0
-  
-  # Models/Serialization
-  json_annotation: ^4.8.0
-  
-  # Connectivity
-  connectivity_plus: ^5.0.0
-  
-  # PDF Preview
-  flutter_pdfview: ^1.3.0
-  
-  # Cupertino icons
-  cupertino_icons: ^1.0.0
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
-  build_runner: ^2.4.0
-  json_serializable: ^6.7.0
+  flutter_lints: ^6.0.0
+  flutter_native_splash: ^2.4.1
+
+# flutter_native_splash config — run: dart run flutter_native_splash:create
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/images/ic_logo.png
+  android: true
+  ios: true
+  fullscreen: true
+  android_12:
+    color: "#FFFFFF"
+    image: assets/images/ic_logo.png
 
 flutter:
   uses-material-design: true
-  
+
   assets:
     - assets/images/
-    - assets/json/
     - assets/fonts/
+    - assets/json/
 
   fonts:
     - family: Outfit

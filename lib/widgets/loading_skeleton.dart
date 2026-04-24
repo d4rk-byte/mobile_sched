@@ -1,6 +1,7 @@
 // lib/widgets/loading_skeleton.dart
 
 import 'package:flutter/material.dart';
+import '../utils/theme.dart';
 
 class LoadingSkeleton extends StatefulWidget {
   final double height;
@@ -26,7 +27,7 @@ class _LoadingSkeletonState extends State<LoadingSkeleton>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+      duration: AppMotion.slow,
       vsync: this,
     )..repeat();
   }
@@ -43,14 +44,20 @@ class _LoadingSkeletonState extends State<LoadingSkeleton>
       width: widget.width,
       height: widget.height,
       decoration: BoxDecoration(
-        color: Colors.grey[300],
+        color: AppColors.cardSurface,
         borderRadius: widget.borderRadius,
+        border: Border.all(
+          color: AppColors.cardBorder.withValues(alpha: 0.65),
+        ),
       ),
       child: FadeTransition(
-        opacity: Tween<double>(begin: 0.6, end: 1.0).animate(
+        opacity: Tween<double>(begin: 0.5, end: 1.0).animate(
             CurvedAnimation(parent: _controller, curve: Curves.easeInOut)),
         child: Container(
-          color: Colors.grey[200],
+          decoration: BoxDecoration(
+            color: AppColors.whiteColor.withValues(alpha: 0.82),
+            borderRadius: widget.borderRadius,
+          ),
         ),
       ),
     );

@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/api_provider.dart';
 import '../utils/theme.dart';
 
+const _kChangePasswordCardPadding = 14.0;
+const _kChangePasswordButtonVerticalPadding = 14.0;
+
 class ChangePasswordScreen extends ConsumerStatefulWidget {
   const ChangePasswordScreen({super.key});
 
@@ -92,10 +95,10 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(_kChangePasswordCardPadding),
               decoration: BoxDecoration(
                 color: AppColors.info.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
@@ -104,8 +107,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline, color: AppColors.info, size: 20),
-                  const SizedBox(width: 8),
+                  const Icon(Icons.info_outline,
+                      color: AppColors.info, size: 20),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
                       'Choose a strong password with at least 8 characters',
@@ -118,10 +122,10 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             if (_errorMessage != null) ...[
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: AppColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -132,7 +136,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                   children: [
                     const Icon(Icons.error_outline,
                         color: AppColors.error, size: 20),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
                         _errorMessage!,
@@ -145,7 +149,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
             ],
             _buildPasswordField(
               controller: _currentPasswordController,
@@ -163,7 +167,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             _buildPasswordField(
               controller: _newPasswordController,
               label: 'New Password',
@@ -186,7 +190,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             _buildPasswordField(
               controller: _confirmPasswordController,
               label: 'Confirm New Password',
@@ -206,7 +210,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -224,7 +228,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 label: Text(
                     _isLoading ? 'Changing Password...' : 'Change Password'),
                 style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: _kChangePasswordButtonVerticalPadding,
+                  ),
                 ),
               ),
             ),
@@ -266,7 +272,8 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.cardPrimaryEnd, width: 2),
+          borderSide:
+              const BorderSide(color: AppColors.cardPrimaryEnd, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

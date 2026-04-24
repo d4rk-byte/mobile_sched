@@ -5,6 +5,22 @@ import '../providers/auth_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../providers/class_notification_provider.dart';
 import '../utils/theme.dart';
+import '../widgets/elegant_card.dart';
+import '../widgets/metadata_chip.dart';
+import '../widgets/screen_shimmer.dart';
+import '../widgets/section_header.dart';
+import '../widgets/staggered_list.dart';
+import '../widgets/status_pill.dart';
+
+const _kDashboardListBottomPadding = 28.0;
+const _kDashboardSectionSpacing = 18.0;
+const _kDashboardGridSpacing = 10.0;
+const _kDashboardLargeGap = 24.0;
+const _kDashboardCardPadding = 14.0;
+const _kDashboardTinyGap = 2.0;
+const _kDashboardCompactGap = AppSpacing.sm - 2;
+const _kDashboardPillVerticalPadding = AppSpacing.sm - 1;
+const _kDashboardStatusPillVerticalPadding = AppSpacing.sm - 3;
 
 /// Sorts schedules by status: In Progress first, then Upcoming, then Completed
 List<ScheduleItem> _sortSchedulesByStatus(List<ScheduleItem> schedules) {
@@ -12,7 +28,7 @@ List<ScheduleItem> _sortSchedulesByStatus(List<ScheduleItem> schedules) {
   sorted.sort((a, b) {
     final aStatus = a.timeStatus;
     final bStatus = b.timeStatus;
-    
+
     // Priority: inProgress (0) > upcoming (1) > completed (2)
     int getPriority(ScheduleTimeStatus status) {
       switch (status) {
@@ -24,7 +40,7 @@ List<ScheduleItem> _sortSchedulesByStatus(List<ScheduleItem> schedules) {
           return 2;
       }
     }
-    
+
     return getPriority(aStatus).compareTo(getPriority(bStatus));
   });
   return sorted;
@@ -52,6 +68,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final dashboardAsync = ref.watch(dashboardProvider);
     final user = ref.watch(authProvider).user;
+    final textTheme = Theme.of(context).textTheme;
 
     final fallbackName = user?.fullName.trim().isNotEmpty == true
         ? user!.fullName.trim().split(' ').first
@@ -63,13 +80,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: () => _refresh(),
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-        ],
       ),
       body: dashboardAsync.when(
         data: (dashboard) {
@@ -77,110 +87,103 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _scheduleNotificationsForClasses(dashboard.todaySchedules);
           });
-          
+
           return RefreshIndicator(
             onRefresh: () => _refresh(),
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                _kDashboardListBottomPadding,
+              ),
               children: [
-                _HeroBanner(
-                  firstName: firstName,
-                  period: dashboard.academicYear != null
-                      ? '${dashboard.academicYear!.year} • ${dashboard.academicYear!.semester} Semester'
-                      : 'No active academic period',
-                  dateLabel: dashboard.today.trim().isNotEmpty
-                      ? dashboard.today
-                      : 'Today',
-                  todayCount: dashboard.stats.todayCount,
-                ),
-                const SizedBox(height: 18),
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  childAspectRatio: 1.5,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
+                StaggeredList(
                   children: [
-                    _InsightCard(
-                    label: 'Teaching Hours',
-                    value: dashboard.stats.totalHours.toStringAsFixed(1),
-                    helper: 'Weekly load',
-                    icon: Icons.timer_outlined,
-                    color: const Color(0xFF3B82F6),
-                  ),
-                  _InsightCard(
-                    label: 'Active Classes',
-                    value: '${dashboard.stats.activeClasses}',
-                    helper: 'Current term',
-                    icon: Icons.menu_book_outlined,
-                    color: const Color(0xFF0EA5A5),
-                  ),
-                  _InsightCard(
-                    label: 'Total Students',
-                    value: '${dashboard.stats.totalStudents}',
-                    helper: 'Across classes',
-                    icon: Icons.groups_2_outlined,
-                    color: const Color(0xFFF97316),
-                  ),
-                  _InsightCard(
-                    label: 'Today\'s Classes',
-                    value: '${dashboard.stats.todayCount}',
-                    helper: 'Schedule today',
-                    icon: Icons.calendar_today_outlined,
-                    color: const Color(0xFF8B5CF6),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Today\'s Schedule',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                    _HeroBanner(
+                      firstName: firstName,
+                      period: dashboard.academicYear != null
+                          ? '${dashboard.academicYear!.year} • ${dashboard.academicYear!.semester} Semester'
+                          : 'No active academic period',
+                      dateLabel: dashboard.today.trim().isNotEmpty
+                          ? dashboard.today
+                          : 'Today',
+                      todayCount: dashboard.stats.todayCount,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: _kDashboardSectionSpacing),
+                      child: GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        childAspectRatio: 1.5,
+                        mainAxisSpacing: _kDashboardGridSpacing,
+                        crossAxisSpacing: _kDashboardGridSpacing,
+                        children: [
+                          _InsightCard(
+                            label: 'Teaching Hours',
+                            value: dashboard.stats.totalHours.toStringAsFixed(1),
+                            helper: 'Weekly load',
+                            icon: Icons.timer_outlined,
+                            color: const Color(0xFF3B82F6),
+                          ),
+                          _InsightCard(
+                            label: 'Active Classes',
+                            value: '${dashboard.stats.activeClasses}',
+                            helper: 'Current term',
+                            icon: Icons.menu_book_outlined,
+                            color: const Color(0xFF0EA5A5),
+                          ),
+                          _InsightCard(
+                            label: 'Total Students',
+                            value: '${dashboard.stats.totalStudents}',
+                            helper: 'Across classes',
+                            icon: Icons.groups_2_outlined,
+                            color: const Color(0xFFF97316),
+                          ),
+                          _InsightCard(
+                            label: "Today's Classes",
+                            value: '${dashboard.stats.todayCount}',
+                            helper: 'Schedule today',
+                            icon: Icons.calendar_today_outlined,
+                            color: const Color(0xFF8B5CF6),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    child: Text(
-                      '${dashboard.todaySchedules.length} items',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryDark,
+                    Padding(
+                      padding: const EdgeInsets.only(top: _kDashboardLargeGap),
+                      child: SectionHeader(
+                        title: "Today's Schedule",
+                        count: dashboard.todaySchedules.length,
+                        countLabel: 'items',
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              if (dashboard.todaySchedules.isEmpty)
-                const _EmptyScheduleCard()
-              else
-                ..._sortSchedulesByStatus(dashboard.todaySchedules).map(
-                  (schedule) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _DashboardScheduleCard(schedule: schedule),
-                  ),
+                  ],
                 ),
-            ],
-          ),
-        );
+                const SizedBox(height: AppSpacing.md),
+                if (dashboard.todaySchedules.isEmpty)
+                  const _EmptyScheduleCard()
+                else ...[
+                  for (int i = 0; i < dashboard.todaySchedules.length; i++) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: StaggeredItem(
+                        index: i + 3,
+                        child: _DashboardScheduleCard(
+                          schedule: _sortSchedulesByStatus(
+                              dashboard.todaySchedules)[i],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ],
+            ),
+          );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const DashboardShimmer(),
         error: (error, stackTrace) => _DashboardErrorState(
           message: error.toString(),
           onRetry: () => _refresh(),
@@ -205,55 +208,49 @@ class _HeroBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(_kDashboardSectionSpacing),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [AppColors.cardPrimaryStart, AppColors.cardPrimaryEnd],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.cardPrimaryStart.withValues(alpha: 0.22),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        boxShadow: AppShadow.hero(AppColors.cardPrimaryStart),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Welcome back, $firstName',
-            style: const TextStyle(
+            style: textTheme.titleLarge?.copyWith(
               color: Colors.white,
-              fontSize: 21,
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             period,
-            style: const TextStyle(
-              color: Color(0xFFE0E7FF),
-              fontSize: 13,
+            style: textTheme.bodySmall?.copyWith(
+              color: const Color(0xFFE0E7FF),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: _kDashboardCardPadding),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
             children: [
-              _HeroPill(
+              MetadataChip.onGradient(
                 icon: Icons.today_outlined,
-                label: dateLabel,
+                text: dateLabel,
               ),
-              _HeroPill(
+              MetadataChip.onGradient(
                 icon: Icons.class_outlined,
-                label: '$todayCount class${todayCount == 1 ? '' : 'es'} today',
+                text: '$todayCount class${todayCount == 1 ? '' : 'es'} today',
               ),
             ],
           ),
@@ -263,38 +260,7 @@ class _HeroBanner extends StatelessWidget {
   }
 }
 
-class _HeroPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
 
-  const _HeroPill({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(99),
-        color: Colors.white.withValues(alpha: 0.16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white, size: 15),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _InsightCard extends StatelessWidget {
   final String label;
@@ -313,25 +279,27 @@ class _InsightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.cardBorder),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        boxShadow: AppShadow.card,
       ),
       child: Row(
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: color.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              color: color.withValues(alpha: 0.10),
             ),
-            child: Icon(icon, color: color, size: 18),
+            child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,8 +307,7 @@ class _InsightCard extends StatelessWidget {
               children: [
                 Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 20,
+                  style: textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
@@ -349,8 +316,7 @@ class _InsightCard extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 11,
+                  style: textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.w500,
                     color: AppColors.textSecondary,
                   ),
@@ -416,24 +382,22 @@ class _DashboardScheduleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final timeStatus = schedule.timeStatus;
+    final textTheme = Theme.of(context).textTheme;
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
+    return ElegantCard(
+      accentColor: _getStatusColor(timeStatus),
+      padding: const EdgeInsets.all(_kDashboardCardPadding),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Time box (similar to web frontend)
           Container(
             width: 56,
-            padding: const EdgeInsets.symmetric(vertical: 10),
+            padding:
+                const EdgeInsets.symmetric(vertical: _kDashboardGridSpacing),
             decoration: BoxDecoration(
               color: _getTimeBoxColor(timeStatus),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -441,18 +405,16 @@ class _DashboardScheduleCard extends StatelessWidget {
                 Text(
                   schedule.startTime12h,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 11,
+                  style: textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: _getTimeTextColor(timeStatus),
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: _kDashboardTinyGap),
                 Text(
                   schedule.endTime12h,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 10,
+                  style: textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: _getTimeTextColor(timeStatus).withValues(alpha: 0.8),
                   ),
@@ -460,7 +422,7 @@ class _DashboardScheduleCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           // Content
           Expanded(
             child: Column(
@@ -477,44 +439,42 @@ class _DashboardScheduleCard extends StatelessWidget {
                             '${schedule.subject.code} - ${schedule.subject.title}',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 13,
+                            style: textTheme.labelLarge?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: AppColors.textPrimary,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${schedule.dayPatternLabel} | Room ${schedule.room.code}${schedule.room.name != null ? ' (${schedule.room.name})' : ''} | Section ${schedule.section ?? '—'} | ${schedule.enrolledStudents} students',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
-                            ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Wrap(
+                            spacing: AppSpacing.xs,
+                            runSpacing: AppSpacing.xs,
+                            children: [
+                              MetadataChip(
+                                icon: Icons.location_on_outlined,
+                                text: schedule.room.code,
+                              ),
+                              MetadataChip(
+                                icon: Icons.calendar_today_outlined,
+                                text: schedule.dayPatternLabel,
+                              ),
+                              if (schedule.section != null)
+                                MetadataChip(
+                                  icon: Icons.groups_2_outlined,
+                                  text: 'Sec. ${schedule.section}',
+                                ),
+                              MetadataChip(
+                                icon: Icons.people_outline,
+                                text: '${schedule.enrolledStudents}',
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    // Status badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getStatusBackgroundColor(timeStatus),
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                      child: Text(
-                        timeStatus.label,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: _getStatusColor(timeStatus),
-                        ),
-                      ),
+                    const SizedBox(width: AppSpacing.sm),
+                    StatusPill(
+                      label: timeStatus.label,
+                      color: _getStatusColor(timeStatus),
                     ),
                   ],
                 ),
@@ -532,36 +492,39 @@ class _EmptyScheduleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+      padding: const EdgeInsets.symmetric(
+        horizontal: _kDashboardSectionSpacing,
+        vertical: _kDashboardLargeGap,
+      ),
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.cardBorder),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.free_breakfast_outlined,
             size: 34,
             color: AppColors.textSecondary,
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.md),
           Text(
             'No classes lined up today.',
-            style: TextStyle(
-              fontSize: 14,
+            style: textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             'Enjoy the breathing room while it lasts.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
+            style: textTheme.bodySmall?.copyWith(
               color: AppColors.textSecondary,
             ),
           ),
@@ -579,28 +542,30 @@ class _DashboardErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.error_outline, size: 42, color: AppColors.error),
-            const SizedBox(height: 12),
-            const Text(
+            const SizedBox(height: AppSpacing.md),
+            Text(
               'Could not load dashboard',
-              style: TextStyle(
+              style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
-                fontSize: 16,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: _kDashboardCompactGap),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.textSecondary),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: _kDashboardCardPadding),
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded),

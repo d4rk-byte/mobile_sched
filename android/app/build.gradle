@@ -4,6 +4,18 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+def isReleaseBuild = gradle.startParameter.taskNames.any { taskName ->
+    taskName.toLowerCase().contains("release")
+}
+
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { stream ->
+        keystoreProperties.load(stream)
+    }
+}
+
 android {
     namespace "com.rrdhoi.social_media_app"
     compileSdk flutter.compileSdkVersion
@@ -23,6 +35,19 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias keystoreProperties["keyAlias"]
+                keyPassword keystoreProperties["keyPassword"]
+                storeFile keystoreProperties["storeFile"]
+                        ? file(keystoreProperties["storeFile"])
+                        : null
+                storePassword keystoreProperties["storePassword"]
+            }
+        }
+    }
+
     defaultConfig {
         applicationId "com.rrdhoi.social_media_app"
         multiDexEnabled true
@@ -34,9 +59,17 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig signingConfigs.debug
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            } else {
+                // Keep debug tasks working, but block accidental production release builds.
+                signingConfig signingConfigs.debug
+                if (isReleaseBuild) {
+                    throw new RuntimeException(
+                            "Missing android/key.properties. Copy android/key.properties.example to android/key.properties and set your release keystore values."
+                    )
+                }
+            }
         }
     }
 }
